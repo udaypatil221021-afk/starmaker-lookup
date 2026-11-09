@@ -1,0 +1,120 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StarMaker Lookup - Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#101322;color:white;font-family:Arial,sans-serif;padding:20px}
+.container{max-width:650px;margin:50px auto}
+.card{background:#1b2035;padding:25px;border-radius:16px;margin-bottom:18px}
+h1{text-align:center;color:#ffb347}
+h2{color:#ffb347}
+input{width:100%;padding:14px;margin:9px 0;border:1px solid #444;border-radius:8px;background:#101322;color:white}
+button{padding:13px 18px;border:0;border-radius:8px;background:#ff9d35;color:#111;font-weight:bold;width:100%;margin-top:10px}
+button.secondary{background:#444;color:white}
+.hidden{display:none}
+.message{padding:12px;background:#303750;border-radius:8px;margin-top:12px;overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>⭐ StarMaker Lookup</h1>
+  <div class="card" id="loginBox">
+    <h2>Admin Login</h2>
+    <input id="email" type="email" placeholder="Admin Email">
+    <input id="password" type="password" placeholder="Password">
+    <button id="loginBtn" onclick="login()">LOGIN</button>
+    <div id="loginMessage" class="message hidden"></div>
+  </div>
+
+  <div class="card hidden" id="dashboard">
+    <h2>Admin Dashboard</h2>
+    <p>Welcome, Admin!</p>
+    <div class="message" id="adminEmail"></div>
+    <div class="message">Admin authentication: Verified</div>
+    <h2>Website Management</h2>
+    <p>ID Lookup: Existing service</p>
+    <p>Room Lookup: Existing service</p>
+    <p>Lookup statistics and history: Not connected yet</p>
+    <button class="secondary" onclick="logout()">LOGOUT</button>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://qjbknoxpuugnypmyjrst.supabase.co";
+const SUPABASE_KEY = "sb_publishable_FXhBbTgT-lQZbfiR2BaS-Q__CtG4IjQ";
+
+const db = window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+function message(text){
+  const box=document.getElementById("loginMessage");
+  box.textContent=text;
+  box.classList.remove("hidden");
+}
+
+async function verifyAdmin(user){
+  const {data,error}=await db
+    .from("admin_users")
+    .select("user_id,email")
+    .eq("user_id",user.id)
+    .maybeSingle();
+
+  if(error) throw error;
+  if(!data) throw new Error("You are not authorized as Admin.");
+
+  document.getElementById("adminEmail").textContent=data.email;
+  document.getElementById("loginBox").classList.add("hidden");
+  document.getElementById("dashboard").classList.remove("hidden");
+}
+
+async function login(){
+  const email=document.getElementById("email").value.trim();
+  const password=document.getElementById("password").value;
+
+  if(!email || !password){
+    message("Please enter email and password.");
+    return;
+  }
+
+  const btn=document.getElementById("loginBtn");
+  btn.disabled=true;
+  btn.textContent="PLEASE WAIT...";
+
+  try{
+    const {data,error}=await db.auth.signInWithPassword({email,password});
+    if(error) throw error;
+    await verifyAdmin(data.user);
+  }catch(e){
+    await db.auth.signOut();
+    message(e.message || "Login failed.");
+  }finally{
+    btn.disabled=false;
+    btn.textContent="LOGIN";
+  }
+}
+
+async function logout(){
+  await db.auth.signOut();
+  location.reload();
+}
+
+async function checkSession(){
+  const {data}=await db.auth.getSession();
+  if(data.session){
+    try{
+      await verifyAdmin(data.session.user);
+    }catch(e){
+      await db.auth.signOut();
+      message(e.message);
+    }
+  }
+}
+
+checkSession();
+</script>
+</body>
+</html>
