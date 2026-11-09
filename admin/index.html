@@ -13,20 +13,26 @@ body{margin:0;padding:16px;background:#101322;color:white;font-family:Arial,sans
 .card{background:#1b2035;padding:20px;border-radius:14px;margin-bottom:16px}
 h1,h2{color:#ffb347}
 h1{text-align:center}
-input,textarea{width:100%;padding:12px;margin:8px 0;background:#101322;color:white;border:1px solid #454b62;border-radius:8px}
+input,textarea,select{width:100%;padding:12px;margin:8px 0;background:#101322;color:white;border:1px solid #454b62;border-radius:8px}
 button{padding:12px 16px;border:0;border-radius:8px;background:#ff9d35;color:#111;font-weight:bold;cursor:pointer;margin:5px 0}
+button:disabled{opacity:.6}
 .secondary{background:#444;color:white}
 .danger{background:#c94343;color:white}
+.green{background:#218b57;color:white}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
 .stat{background:#252c46;padding:16px;border-radius:10px}
 .stat strong{display:block;font-size:25px;color:#ffb347;margin-top:8px}
-.hidden{display:none}
+.hidden{display:none!important}
 .message{padding:12px;background:#303750;border-radius:8px;margin:10px 0;overflow-wrap:anywhere}
 .item{padding:12px;background:#252c46;border-radius:8px;margin:8px 0;overflow-wrap:anywhere}
 .small{color:#b8bfd3;font-size:13px}
 table{width:100%;border-collapse:collapse;font-size:13px}
 td,th{padding:9px;border-bottom:1px solid #454b62;text-align:left}
 .table-wrap{overflow-x:auto}
+.tool-card{background:#252c46;padding:14px;border-radius:10px;margin:10px 0}
+.tool-title{font-size:17px;font-weight:bold}
+.tool-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+label{display:block;margin-top:8px;color:#ddd}
 </style>
 </head>
 <body>
@@ -73,6 +79,46 @@ td,th{padding:9px;border-bottom:1px solid #454b62;text-align:left}
 </div>
 
 <div class="card">
+<h2>🧰 Tools Manager</h2>
+<p class="small">Add and manage tools that will appear on your public website after the User Panel is connected.</p>
+
+<input type="hidden" id="toolId">
+
+<label>Tool Name</label>
+<input id="toolName" placeholder="Example: QR Code Generator">
+
+<label>Tool URL Slug (English, no spaces)</label>
+<input id="toolSlug" placeholder="Example: qr-code-generator">
+
+<label>Tool Icon / Emoji</label>
+<input id="toolIcon" placeholder="Example: 🔳">
+
+<label>Description</label>
+<textarea id="toolDescription" rows="2" placeholder="What does this tool do?"></textarea>
+
+<label>Tool Type</label>
+<select id="toolType">
+<option value="link">External Website Link</option>
+<option value="builtin">Built-in Website Tool</option>
+</select>
+
+<label>Tool Page URL (for External Website Link)</label>
+<input id="toolUrl" type="url" placeholder="https://example.com/tool">
+
+<label>Display Order</label>
+<input id="toolOrder" type="number" value="0">
+
+<button id="saveToolBtn" onclick="saveTool()">ADD TOOL</button>
+<button class="secondary" onclick="resetToolForm()">CLEAR FORM</button>
+<div id="toolMessage" class="message hidden"></div>
+
+<hr style="border-color:#454b62;margin:20px 0">
+<h3>📚 Added Tools</h3>
+<button onclick="loadTools()">REFRESH TOOLS</button>
+<div id="toolsList">Loading tools...</div>
+</div>
+
+<div class="card">
 <h2>📢 Announcements</h2>
 <textarea id="announcementText" rows="3" placeholder="Write announcement..."></textarea>
 <button onclick="addAnnouncement()">ADD ANNOUNCEMENT</button>
@@ -98,11 +144,19 @@ td,th{padding:9px;border-bottom:1px solid #454b62;text-align:left}
 </div>
 
 <script>
+"use strict";
+
 const SUPABASE_URL="https://qjbknoxpuugnypmyjrst.supabase.co";
 const SUPABASE_KEY="sb_publishable_FXhBbTgT-lQZbfiR2BaS-Q__CtG4IjQ";
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 let maintenance=false;
+
+function escapeHTML(value){
+ return String(value??"").replace(/[&<>"']/g,c=>({
+  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+ }[c]));
+}
 
 function showLoginMessage(t){
  const b=document.getElementById("loginMessage");
@@ -113,8 +167,8 @@ function showLoginMessage(t){
 async function verifyAdmin(user){
  const {data,error}=await db.from("admin_users")
  .select("user_id,email").eq("user_id",user.id).maybeSingle();
- if(error) throw error;
- if(!data) throw new Error("You are not authorized as Admin.");
+ if(error)throw error;
+ if(!data)throw new Error("You are not authorized as Admin.");
  document.getElementById("adminEmail").textContent=data.email;
  document.getElementById("loginBox").classList.add("hidden");
  document.getElementById("dashboard").classList.remove("hidden");
@@ -129,7 +183,7 @@ async function login(){
  btn.disabled=true;btn.textContent="PLEASE WAIT...";
  try{
   const {data,error}=await db.auth.signInWithPassword({email,password});
-  if(error) throw error;
+  if(error)throw error;
   await verifyAdmin(data.user);
  }catch(e){
   await db.auth.signOut();
@@ -155,7 +209,7 @@ async function checkSession(){
 async function countEvents(type){
  const {count,error}=await db.from("site_events")
  .select("*",{count:"exact",head:true}).eq("event_type",type);
- if(error) throw error;
+ if(error)throw error;
  return count||0;
 }
 
@@ -166,10 +220,10 @@ async function loadStats(){
    countEvents("id_lookup"),
    countEvents("room_lookup"),
    db.from("site_events").select("visitor_id")
-    .eq("event_type","page_view")
+    .eq("event_type","heartbeat")
     .gte("created_at",new Date(Date.now()-300000).toISOString())
   ]);
-  if(live.error) throw live.error;
+  if(live.error)throw live.error;
   const visitors=new Set((live.data||[]).map(x=>x.visitor_id).filter(Boolean));
   document.getElementById("liveUsers").textContent=visitors.size;
   document.getElementById("totalViews").textContent=views;
@@ -196,12 +250,190 @@ async function loadHistory(){
  </tr>`).join("");
 }
 
+/* TOOLS MANAGER */
+
+function showToolMessage(message){
+ const box=document.getElementById("toolMessage");
+ box.textContent=message;
+ box.classList.remove("hidden");
+}
+
+function resetToolForm(){
+ document.getElementById("toolId").value="";
+ document.getElementById("toolName").value="";
+ document.getElementById("toolSlug").value="";
+ document.getElementById("toolIcon").value="";
+ document.getElementById("toolDescription").value="";
+ document.getElementById("toolType").value="link";
+ document.getElementById("toolUrl").value="";
+ document.getElementById("toolOrder").value="0";
+ document.getElementById("saveToolBtn").textContent="ADD TOOL";
+ document.getElementById("toolMessage").classList.add("hidden");
+}
+
+function makeSlug(value){
+ return value.toLowerCase().trim()
+ .replace(/[^a-z0-9]+/g,"-")
+ .replace(/^-+|-+$/g,"");
+}
+
+async function saveTool(){
+ const id=document.getElementById("toolId").value;
+ const name=document.getElementById("toolName").value.trim();
+ const slug=makeSlug(document.getElementById("toolSlug").value);
+ const icon=document.getElementById("toolIcon").value.trim()||"🛠️";
+ const description=document.getElementById("toolDescription").value.trim();
+ const tool_type=document.getElementById("toolType").value;
+ const tool_url=document.getElementById("toolUrl").value.trim();
+ const sort_order=parseInt(document.getElementById("toolOrder").value,10)||0;
+
+ if(!name||!slug){
+  showToolMessage("Please enter Tool Name and Slug.");
+  return;
+ }
+ if(tool_type==="link"){
+  try{
+   const url=new URL(tool_url);
+   if(url.protocol!=="https:"&&url.protocol!=="http:")throw new Error();
+  }catch(e){
+   showToolMessage("Enter a valid HTTP or HTTPS Tool URL.");
+   return;
+  }
+ }
+
+ const payload={
+  name,slug,icon,description,tool_type,
+  tool_url:tool_type==="link"?tool_url:"",
+  sort_order
+ };
+
+ const btn=document.getElementById("saveToolBtn");
+ btn.disabled=true;
+ btn.textContent="SAVING...";
+
+ try{
+  let result;
+  if(id){
+   result=await db.from("site_tools").update(payload).eq("id",id);
+  }else{
+   result=await db.from("site_tools").insert(payload);
+  }
+  if(result.error)throw result.error;
+
+  showToolMessage(id?"Tool updated successfully.":"Tool added successfully.");
+  resetToolForm();
+  await loadTools();
+ }catch(e){
+  showToolMessage("Error: "+e.message);
+ }finally{
+  btn.disabled=false;
+  btn.textContent=document.getElementById("toolId").value?"UPDATE TOOL":"ADD TOOL";
+ }
+}
+
+async function loadTools(){
+ const box=document.getElementById("toolsList");
+ box.textContent="Loading tools...";
+
+ const {data,error}=await db.from("site_tools")
+ .select("*").order("sort_order",{ascending:true})
+ .order("created_at",{ascending:false});
+
+ if(error){
+  box.textContent="Tools error: "+error.message;
+  return;
+ }
+ if(!data||!data.length){
+  box.textContent="No tools added yet. Add your first tool above.";
+  return;
+ }
+
+ box.replaceChildren();
+
+ data.forEach(tool=>{
+  const card=document.createElement("div");
+  card.className="tool-card";
+
+  const title=document.createElement("div");
+  title.className="tool-title";
+  title.textContent=(tool.icon||"🛠️")+" "+tool.name;
+
+  const detail=document.createElement("div");
+  detail.className="small";
+  detail.textContent="Slug: "+tool.slug+" | Type: "+tool.tool_type+" | Status: "+(tool.is_active?"Active":"Inactive");
+
+  const desc=document.createElement("p");
+  desc.className="small";
+  desc.textContent=tool.description||"No description";
+
+  const url=document.createElement("div");
+  url.className="small";
+  url.textContent=tool.tool_type==="link"?(tool.tool_url||"No URL"):"Built-in tool";
+
+  const actions=document.createElement("div");
+  actions.className="tool-actions";
+
+  const edit=document.createElement("button");
+  edit.className="secondary";
+  edit.textContent="EDIT";
+  edit.onclick=()=>editTool(tool.id);
+
+  const toggle=document.createElement("button");
+  toggle.className=tool.is_active?"secondary":"green";
+  toggle.textContent=tool.is_active?"TURN OFF":"TURN ON";
+  toggle.onclick=()=>toggleTool(tool.id,!tool.is_active);
+
+  const del=document.createElement("button");
+  del.className="danger";
+  del.textContent="DELETE";
+  del.onclick=()=>deleteTool(tool.id);
+
+  actions.append(edit,toggle,del);
+  card.append(title,detail,desc,url,actions);
+  box.appendChild(card);
+ });
+}
+
+async function editTool(id){
+ const {data,error}=await db.from("site_tools").select("*").eq("id",id).maybeSingle();
+ if(error||!data){
+  alert("Unable to load tool: "+(error?.message||"Not found"));
+  return;
+ }
+ document.getElementById("toolId").value=data.id;
+ document.getElementById("toolName").value=data.name||"";
+ document.getElementById("toolSlug").value=data.slug||"";
+ document.getElementById("toolIcon").value=data.icon||"";
+ document.getElementById("toolDescription").value=data.description||"";
+ document.getElementById("toolType").value=data.tool_type||"link";
+ document.getElementById("toolUrl").value=data.tool_url||"";
+ document.getElementById("toolOrder").value=data.sort_order||0;
+ document.getElementById("saveToolBtn").textContent="UPDATE TOOL";
+ document.getElementById("toolName").scrollIntoView({behavior:"smooth",block:"center"});
+}
+
+async function toggleTool(id,active){
+ const {error}=await db.from("site_tools").update({is_active:active}).eq("id",id);
+ if(error){alert("Error: "+error.message);return;}
+ await loadTools();
+}
+
+async function deleteTool(id){
+ if(!confirm("Are you sure you want to delete this tool?"))return;
+ const {error}=await db.from("site_tools").delete().eq("id",id);
+ if(error){alert("Error: "+error.message);return;}
+ await loadTools();
+}
+
+/* ANNOUNCEMENTS */
+
 async function loadAnnouncements(){
  const box=document.getElementById("announcementList");
  const {data,error}=await db.from("site_announcements")
  .select("*").order("updated_at",{ascending:false});
  if(error){box.textContent=error.message;return;}
  if(!data.length){box.textContent="No announcements yet.";return;}
+
  box.innerHTML=data.map(x=>`
  <div class="item">
  <div>${escapeHTML(x.message)}</div>
@@ -239,21 +471,23 @@ async function toggleAnnouncement(time,status){
  await loadAnnouncements();
 }
 
+/* WEBSITE SETTINGS */
+
 async function getSetting(key){
  const {data,error}=await db.from("site_settings")
  .select("setting_value").eq("setting_key",key)
  .order("updated_at",{ascending:false}).limit(1);
- if(error) throw error;
+ if(error)throw error;
  return data&&data.length?data[0].setting_value:"";
 }
 
 async function saveSetting(key,value){
  const {error:delError}=await db.from("site_settings").delete().eq("setting_key",key);
- if(delError) throw delError;
+ if(delError)throw delError;
  const {error}=await db.from("site_settings").insert({
   setting_key:key,setting_value:value,updated_at:new Date().toISOString()
  });
- if(error) throw error;
+ if(error)throw error;
 }
 
 async function loadSettings(){
@@ -271,7 +505,41 @@ async function saveSettings(){
  try{
   await saveSetting("site_name",document.getElementById("siteName").value.trim());
   await saveSetting("site_logo",document.getElementById("siteLogo").value.trim());
-  document.getElementById("settingsMessage").textContent="Settings saved in database. Website display integration is still pending.";
+  document.getElementById("settingsMessage").textContent="Website settings saved.";
+ }catch(e){
+  document.getElementById("settingsMessage").textContent="Error: "+e.message;
+ }
+}
+
+function updateMaintenanceLabel(){
+ document.getElementById("maintenanceStatus").textContent=maintenance?"ON":"OFF";
+ document.getElementById("maintenanceBtn").textContent=maintenance?"TURN OFF":"TURN ON";
+}
+
+async function toggleMaintenance(){
+ try{
+  maintenance=!maintenance;
+  await saveSetting("maintenance_mode",String(maintenance));
+  updateMaintenanceLabel();
+  document.getElementById("settingsMessage").textContent="Maintenance setting saved.";
+ }catch(e){
+  maintenance=!maintenance;
+  updateMaintenanceLabel();
+  alert(e.message);
+ }
+}
+
+async function refreshAll(){
+ await Promise.all([
+  loadStats(),loadHistory(),loadAnnouncements(),loadSettings(),loadTools()
+ ]);
+}
+
+checkSession();
+</script>
+</body>
+</html>
+ll pending.";
  }catch(e){
   document.getElementById("settingsMessage").textContent="Error: "+e.message;
  }
