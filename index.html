@@ -5,6 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>StarMaker Lookup</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#0b1020;color:#fff;font-family:Arial,sans-serif}
@@ -42,6 +43,7 @@ h3{font-size:17px}
 .avatar-list img{width:55px;height:55px;object-fit:cover;border-radius:50%;border:2px solid #ff9b39}
 .hidden{display:none!important}
 .note{background:#0e172b;padding:12px;border-radius:9px;color:#aebbd2;font-size:13px;margin-top:12px}
+.announcement{max-width:850px;margin:15px auto;padding:12px 16px;background:#44306a;color:white;border-radius:10px;text-align:center}
 @media(max-width:480px){
  .search button{width:100%}
  .card{padding:13px}
@@ -81,26 +83,125 @@ h3{font-size:17px}
 <script>
 "use strict";
 
-const FUNCTION_URL =
-"https://qjbknoxpuugnypmyjrst.supabase.co/functions/v1/starmaker-id-lookup";
+// ===== SUPABASE CONFIGURATION =====
+const SUPABASE_URL="https://qjbknoxpuugnypmyjrst.supabase.co";
+const SUPABASE_KEY="sb_publishable_FXhBbTgT-lQZbfiR2BaS-Q__CtG4IjQ";
 
-const ROOM_FUNCTION_URL =
-"https://qjbknoxpuugnypmyjrst.supabase.co/functions/v1/starmaker-room-lookup";
+const FUNCTION_URL=SUPABASE_URL+"/functions/v1/starmaker-id-lookup";
+const ROOM_FUNCTION_URL=SUPABASE_URL+"/functions/v1/starmaker-room-lookup";
 
-const SUPABASE_PUBLISHABLE_KEY =
-"sb_publishable_FXhBbTgT-lQZbfiR2BaS-Q__CtG4IjQ";
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-const form = document.getElementById("lookupForm");
-const roomForm = document.getElementById("roomForm");
-const input = document.getElementById("userId");
-const roomInput = document.getElementById("roomLink");
-const button = document.getElementById("searchBtn");
-const roomButton = document.getElementById("roomSearchBtn");
-const statusBox = document.getElementById("status");
-const results = document.getElementById("results");
-const idTab = document.getElementById("idTab");
-const roomTab = document.getElementById("roomTab");
+// ===== PAGE ELEMENTS =====
+const form=document.getElementById("lookupForm");
+const roomForm=document.getElementById("roomForm");
+const input=document.getElementById("userId");
+const roomInput=document.getElementById("roomLink");
+const button=document.getElementById("searchBtn");
+const roomButton=document.getElementById("roomSearchBtn");
+const statusBox=document.getElementById("status");
+const results=document.getElementById("results");
+const idTab=document.getElementById("idTab");
+const roomTab=document.getElementById("roomTab");
 
+// ===== ANONYMOUS VISITOR ID =====
+function getVisitorId(){
+ try{
+  let id=localStorage.getItem("sm_lookup_visitor");
+  if(!id){
+   id=(crypto.randomUUID?crypto.randomUUID():
+    "visitor-"+Date.now()+"-"+Math.random().toString(36).slice(2));
+   localStorage.setItem("sm_lookup_visitor",id);
+  }
+  return id;
+ }catch(e){
+  return "visitor-"+Math.random().toString(36).slice(2);
+ }
+}
+
+// ===== EVENT TRACKING =====
+async function trackEvent(type,value=""){
+ try{
+  const {error}=await db.from("site_events").insert({
+   event_type:type,
+   lookup_value:String(value).slice(0,250),
+   visitor_id:getVisitorId(),
+   page:location.pathname,
+   created_at:new Date().toISOString()
+  });
+  if(error)console.warn("Tracking error:",error.message);
+ }catch(e){
+  console.warn("Tracking unavailable:",e.message);
+ }
+}
+
+// ===== WEBSITE SETTINGS =====
+async function loadPublicSettings(){
+ try{
+  const {data,error}=await db.from("site_settings")
+   .select("setting_key,setting_value")
+   .in("setting_key",["site_name","site_logo","maintenance_mode"]);
+
+  if(error)throw error;
+
+  const settings={};
+  (data||[]).forEach(x=>settings[x.setting_key]=x.setting_value);
+
+  if(settings.maintenance_mode==="true"){
+   document.body.innerHTML=
+    '<div style="min-height:100vh;display:grid;place-items:center;text-align:center;padding:25px;background:#0b1020;color:white;font-family:Arial"><div><h1>🔧 Website Maintenance</h1><p>We will be back soon. Please visit again later.</p></div></div>';
+   return false;
+  }
+
+  if(settings.site_name){
+   document.title=settings.site_name;
+   document.querySelector("header h1").textContent="⭐ "+settings.site_name;
+  }
+
+  if(settings.site_logo){
+   try{
+    const logo=new URL(settings.site_logo);
+    if(logo.protocol==="https:"||logo.protocol==="http:"){
+     let icon=document.querySelector("link[rel='icon']");
+     if(!icon){
+      icon=document.createElement("link");
+      icon.rel="icon";
+      document.head.appendChild(icon);
+     }
+     icon.href=logo.href;
+    }
+   }catch(e){}
+  }
+  return true;
+ }catch(e){
+  console.warn("Settings unavailable:",e.message);
+  return true;
+ }
+}
+
+// ===== ANNOUNCEMENTS =====
+async function loadPublicAnnouncements(){
+ try{
+  const {data,error}=await db.from("site_announcements")
+   .select("message")
+   .eq("is_active",true)
+   .order("updated_at",{ascending:false});
+
+  if(error)throw error;
+  if(!data||!data.length)return;
+
+  const box=document.createElement("div");
+  box.className="announcement";
+  box.textContent="📢 "+data.map(x=>x.message).join(" • ");
+
+  const main=document.querySelector("main");
+  if(main)main.prepend(box);
+ }catch(e){
+  console.warn("Announcements unavailable:",e.message);
+ }
+}
+
+// ===== COMMON DISPLAY HELPERS =====
 function make(tag,cls,text){
  const e=document.createElement(tag);
  if(cls)e.className=cls;
@@ -154,6 +255,7 @@ function showResults(){
  results.classList.remove("hidden");
 }
 
+// ===== USER PROFILE DISPLAY =====
 function displayUser(user,family){
  showResults();
 
@@ -162,7 +264,7 @@ function displayUser(user,family){
  addImage(p,user.profile_image,"Profile Picture","avatar");
 
  p.appendChild(make("div","name",
- user.stage_name||user.name||"Unknown User"));
+  user.stage_name||user.name||"Unknown User"));
 
  if(user.signature)p.appendChild(make("p","muted",user.signature));
 
@@ -203,8 +305,7 @@ function displayUser(user,family){
  imageItem(ig,"Noble Pendant",user.pendant_static_url);
  imageItem(ig,"Animated Pendant",user.pendant_dynamic_url);
  icons.appendChild(ig);
- if(!ig.children.length)
-  icons.appendChild(make("p","muted","No icons available."));
+ if(!ig.children.length)icons.appendChild(make("p","muted","No icons available."));
 
  const ach=section(results,"✨ Achievements");
  const achievementText=user.achieve_desc||"";
@@ -219,6 +320,7 @@ function displayUser(user,family){
  displayFamily(results,family);
 }
 
+// ===== FAMILY DISPLAY =====
 function displayFamily(parent,family){
  const f=section(parent,"👑 Family Information");
 
@@ -255,6 +357,7 @@ function displayFamily(parent,family){
  }
 }
 
+// ===== ROOM DISPLAY =====
 function displayRoom(data){
  showResults();
 
@@ -263,9 +366,7 @@ function displayRoom(data){
  const family=data.family||null;
 
  const r=section(results,"🎤 Room Information");
-
  addImage(r,room.cover_image_url,"Room Cover","cover");
-
  r.appendChild(make("div","name",room.room_name||"StarMaker Room"));
 
  const roomGrid=make("div","grid");
@@ -278,6 +379,238 @@ function displayRoom(data){
  r.appendChild(roomGrid);
 
  const o=section(results,"👑 Room Owner");
+ addImage(o,owner?.profile_image||room.owner_profile_image,"Owner Profile","avatar");
+ o.classList.add("profile");
+ o.appendChild(make("div","name",
+  owner?.stage_name||owner?.name||room.owner_name||"Room Owner"));
+
+ const ownerId=owner?.sid||room.owner_id;
+ if(ownerId)o.appendChild(make("div","muted","StarMaker ID: "+ownerId));
+
+ if(owner){
+  if(owner.signature)o.appendChild(make("p","muted",owner.signature));
+
+  const badges=make("div","pills");
+  if(owner.user_level!==undefined)
+   badges.appendChild(make("span","pill","Level "+owner.user_level));
+  if(owner.is_vip)badges.appendChild(make("span","pill","VIP"));
+  if(owner.is_pro)badges.appendChild(make("span","pill","PRO"));
+  if(owner.is_noble)badges.appendChild(make("span","pill","NOBLE"));
+  o.appendChild(badges);
+
+  const og=make("div","grid");
+  item(og,"Profile Name",owner.name);
+  item(og,"Stage Name",owner.stage_name);
+  item(og,"Bio",owner.signature);
+  item(og,"Gender",owner.gender);
+  item(og,"Level",owner.user_level);
+  item(og,"Profile Created",owner.created_on);
+  item(og,"Last Updated",owner.updated_date);
+  item(og,"VIP Status",owner.is_vip===true?"Yes":owner.is_vip===false?"No":null);
+  item(og,"VIP Level",owner.vip_level);
+  item(og,"PRO Status",owner.is_pro===true?"Yes":owner.is_pro===false?"No":null);
+  item(og,"Asset Range",owner.asset_range);
+  item(og,"Noble Status",owner.is_noble===true?"Yes":owner.is_noble===false?"No":null);
+  item(og,"Noble Title",owner.noble_name);
+  item(og,"Noble Expiration",owner.noble_end_date);
+  o.appendChild(og);
+
+  const oi=make("div","grid");
+  imageItem(oi,"VIP Icon",owner.vip_level_anim_icon);
+  imageItem(oi,"PRO Icon",owner.pro_anim_icon);
+  imageItem(oi,"Noble Icon",owner.noble_icon);
+  imageItem(oi,"Verification Icon",owner.v_info_icon);
+  imageItem(oi,"Pendant",owner.pendant_static_url);
+  o.appendChild(oi);
+ }else{
+  o.appendChild(make("p","muted",
+   "Owner's extended profile is currently unavailable. The room API provided the owner's name, ID and photo."
+  ));
+  if(data.owner_lookup_error){
+   o.appendChild(make("p","muted","Profile lookup: "+data.owner_lookup_error));
+  }
+ }
+
+ displayFamily(results,family);
+
+ const online=section(results,"🟢 Online Members");
+ const count=room.online_people_count;
+ if(count!==undefined)online.appendChild(make("p","muted","Online now: "+count));
+
+ const avatars=room.online_user_avatars||[];
+ if(avatars.length){
+  const list=make("div","avatar-list");
+  avatars.forEach((url,index)=>{
+   addImage(list,url,"Online member "+(index+1),"");
+  });
+  online.appendChild(list);
+ }else{
+  online.appendChild(make("p","muted","Online member photos unavailable."));
+ }
+
+ if(data.room_user_id){
+  const shared=section(results,"🔗 Share Link Information");
+  item(shared,"Share User Name",data.room_user_name);
+  item(shared,"Share User ID",data.room_user_id);
+ }
+}
+
+// ===== API RESPONSE HANDLING =====
+async function readResponse(response){
+ const text=await response.text();
+ let data;
+ try{data=JSON.parse(text);}
+ catch{throw new Error("Server returned an invalid response.");}
+
+ if(!response.ok){
+  throw new Error(data.error||data.message||"Request failed.");
+ }
+ if(data.success===false){
+  throw new Error(data.data?.message||data.error||data.message||"Lookup failed.");
+ }
+ return data;
+}
+
+// ===== TABS =====
+idTab.addEventListener("click",()=>{
+ form.classList.remove("hidden");
+ roomForm.classList.add("hidden");
+ idTab.classList.add("active");
+ roomTab.classList.remove("active");
+ statusBox.textContent="";
+ results.replaceChildren();
+ results.classList.add("hidden");
+});
+
+roomTab.addEventListener("click",()=>{
+ roomForm.classList.remove("hidden");
+ form.classList.add("hidden");
+ roomTab.classList.add("active");
+ idTab.classList.remove("active");
+ statusBox.textContent="";
+ results.replaceChildren();
+ results.classList.add("hidden");
+});
+
+// ===== ID LOOKUP =====
+form.addEventListener("submit",async(event)=>{
+ event.preventDefault();
+
+ const sid=input.value.trim();
+ if(!sid){
+  statusBox.textContent="Please enter a StarMaker ID.";
+  return;
+ }
+
+ button.disabled=true;
+ button.textContent="SEARCHING...";
+ statusBox.textContent="Searching...";
+ results.replaceChildren();
+ results.classList.add("hidden");
+
+ // Record the submitted ID lookup
+ trackEvent("id_lookup",sid);
+
+ try{
+  const response=await fetch(FUNCTION_URL,{
+   method:"POST",
+   headers:{
+    "Content-Type":"application/json",
+    "apikey":SUPABASE_KEY,
+    "Authorization":"Bearer "+SUPABASE_KEY
+   },
+   body:JSON.stringify({sid:sid,lang:"en"})
+  });
+
+  const result=await readResponse(response);
+  const payload=result.data?.data||result.data||result;
+  const user=payload.user;
+  const family=payload.family||null;
+
+  if(!user)throw new Error("User information not found.");
+
+  displayUser(user,family);
+  statusBox.textContent="";
+
+ }catch(error){
+  statusBox.textContent=error.message||"Something went wrong.";
+ }finally{
+  button.disabled=false;
+  button.textContent="LOOKUP";
+ }
+});
+
+// ===== ROOM LOOKUP =====
+roomForm.addEventListener("submit",async(event)=>{
+ event.preventDefault();
+
+ const link=roomInput.value.trim();
+ if(!link){
+  statusBox.textContent="Please paste a StarMaker room share link.";
+  return;
+ }
+
+ roomButton.disabled=true;
+ roomButton.textContent="SEARCHING...";
+ statusBox.textContent="Looking up room...";
+ results.replaceChildren();
+ results.classList.add("hidden");
+
+ // Store room ID only, not the full share link
+ let roomId="room_link";
+ try{
+  const parsed=new URL(link);
+  roomId=parsed.searchParams.get("room_id")||roomId;
+ }catch(e){}
+
+ trackEvent("room_lookup",roomId);
+
+ try{
+  const response=await fetch(ROOM_FUNCTION_URL,{
+   method:"POST",
+   headers:{
+    "Content-Type":"application/json",
+    "apikey":SUPABASE_KEY,
+    "Authorization":"Bearer "+SUPABASE_KEY
+   },
+   body:JSON.stringify({room_link:link})
+  });
+
+  const data=await readResponse(response);
+  if(!data.room)throw new Error("Room information not found.");
+
+  displayRoom(data);
+  statusBox.textContent="";
+
+ }catch(error){
+  statusBox.textContent=error.message||"Room lookup failed.";
+ }finally{
+  roomButton.disabled=false;
+  roomButton.textContent="ROOM LOOKUP";
+ }
+});
+
+// ===== START WEBSITE =====
+async function startWebsite(){
+ const allowed=await loadPublicSettings();
+ if(!allowed)return;
+
+ // Count this page visit
+ trackEvent("page_view");
+
+ // Heartbeat: visitor is active while this page remains open
+ trackEvent("heartbeat");
+ setInterval(()=>trackEvent("heartbeat"),30000);
+
+ // Load active announcements
+ loadPublicAnnouncements();
+}
+
+startWebsite();
+</script>
+</body>
+</html>
+,"👑 Room Owner");
 
  addImage(
   o,
