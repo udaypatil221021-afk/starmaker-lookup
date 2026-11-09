@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -31,140 +32,140 @@ button:disabled{opacity:.6}
 <body>
 
 <header>
-  <div class="logo">⭐ StarMaker Lookup</div>
-  <p>Discover public StarMaker profile information</p>
+<div class="logo">⭐ StarMaker Lookup</div>
+<p>Discover public StarMaker profile information</p>
 </header>
 
 <div class="container">
-  <div class="card">
-    <h2>StarMaker ID Lookup</h2>
-    <p style="text-align:center;color:#b9c4e2">Enter a StarMaker User ID</p>
+<div class="card">
+<h2>StarMaker ID Lookup</h2>
+<p style="text-align:center;color:#b9c4e2">Enter a StarMaker User ID</p>
 
-    <input id="sid" type="text" inputmode="numeric"
-      placeholder="Enter StarMaker User ID">
+<input id="sid" type="text" inputmode="numeric"
+placeholder="Enter StarMaker User ID">
 
-    <button id="lookupBtn" onclick="lookupUser()">LOOKUP PROFILE</button>
-    <div id="status"></div>
+<button id="lookupBtn" onclick="lookupUser()">LOOKUP PROFILE</button>
+<div id="status"></div>
 
-    <div class="profile" id="profile">
-      <div class="profile-top">
-        <img id="avatar" alt="Profile picture">
-        <h2 id="username"></h2>
-        <div id="userid" style="color:#b9c4e2"></div>
-      </div>
-      <div class="details" id="details"></div>
-    </div>
-  </div>
+<div class="profile" id="profile">
+<div class="profile-top">
+<img id="avatar" alt="Profile picture">
+<h2 id="username"></h2>
+<div id="userid" style="color:#b9c4e2"></div>
+</div>
+<div class="details" id="details"></div>
+</div>
+</div>
 
-  <div class="card">
-    <h2>Room Lookup</h2>
-    <p style="text-align:center;color:#b9c4e2">
-      Room Lookup will be added in the next step.
-    </p>
-  </div>
+<div class="card">
+<h2>Room Lookup</h2>
+<p style="text-align:center;color:#b9c4e2">
+Room Lookup will be added in the next step.
+</p>
+</div>
 
-  <div class="note">StarMaker Lookup · Profile information provided by the lookup service</div>
+<div class="note">StarMaker Lookup · Public profile information</div>
 </div>
 
 <script>
 const FUNCTION_URL =
 "https://qjbknoxpuugnypmyjrst.supabase.co/functions/v1/starmaker-id-lookup";
 
-// Replace this placeholder with your Supabase anon/public key.
-const SUPABASE_ANON_KEY = "PASTE_YOUR_SUPABASE_ANON_KEY_HERE";
+// Paste your Supabase sb_publishable_ key between the quotes.
+const SUPABASE_ANON_KEY = "PASTE_YOUR_SUPABASE_PUBLISHABLE_KEY_HERE";
 
 async function lookupUser() {
-  const sid = document.getElementById("sid").value.trim();
-  const status = document.getElementById("status");
-  const button = document.getElementById("lookupBtn");
-  const profile = document.getElementById("profile");
+const sid = document.getElementById("sid").value.trim();
+const status = document.getElementById("status");
+const button = document.getElementById("lookupBtn");
+const profile = document.getElementById("profile");
 
-  profile.style.display = "none";
+profile.style.display = "none";
 
-  if (!/^\d{5,20}$/.test(sid)) {
-    status.textContent = "Please enter a valid StarMaker ID.";
-    return;
-  }
-
-  if (SUPABASE_ANON_KEY.includes("PASTE_YOUR")) {
-    status.textContent = "Supabase public key has not been added yet.";
-    return;
-  }
-
-  button.disabled = true;
-  status.textContent = "Searching profile...";
-
-  try {
-    const response = await fetch(FUNCTION_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": SUPABASE_ANON_KEY,
-        "Authorization": "Bearer " + SUPABASE_ANON_KEY
-      },
-      body: JSON.stringify({ sid })
-    });
-
-    const result = await response.json();
-
-    if (!response.ok || !result.success) {
-      throw new Error(result.error || "Lookup failed.");
-    }
-
-    const user = result.data?.data?.user;
-
-    if (!user) {
-      throw new Error("No profile information was returned.");
-    }
-
-    document.getElementById("avatar").src = user.profile_image || "";
-    document.getElementById("username").textContent =
-      user.stage_name || user.name || "StarMaker User";
-    document.getElementById("userid").textContent = "ID: " + user.sid;
-
-    const fields = [
-      ["Gender", user.gender],
-      ["User Level", user.user_level],
-      ["Account Created", user.created_on],
-      ["Last Updated", user.updated_date],
-      ["VIP Status", user.is_vip ? "Yes" : "No"],
-      ["VIP Level", user.vip_level],
-      ["Family", result.data.data.family ? "Available" : "Not Available"],
-      ["Achievements", user.achieve_desc]
-    ];
-
-    const details = document.getElementById("details");
-    details.replaceChildren();
-
-    fields.forEach(([label, value]) => {
-      const row = document.createElement("div");
-      row.className = "detail";
-
-      const left = document.createElement("span");
-      left.textContent = label;
-
-      const right = document.createElement("span");
-      right.textContent =
-        value === null || value === undefined || value === ""
-          ? "N/A"
-          : String(value);
-
-      row.append(left, right);
-      details.appendChild(row);
-    });
-
-    profile.style.display = "block";
-    status.textContent = "Profile found successfully!";
-
-  } catch (error) {
-    status.textContent = error.message || "Something went wrong.";
-  } finally {
-    button.disabled = false;
-  }
+if (!/^\d{5,20}$/.test(sid)) {
+status.textContent = "Please enter a valid StarMaker ID.";
+return;
 }
 
-document.getElementById("sid").addEventListener("keydown", function(event) {
-  if (event.key === "Enter") lookupUser();
+if (SUPABASE_ANON_KEY.includes("PASTE_YOUR")) {
+status.textContent = "Please add your Supabase Publishable Key.";
+return;
+}
+
+button.disabled = true;
+status.textContent = "Searching profile...";
+
+try {
+const response = await fetch(FUNCTION_URL, {
+method: "POST",
+headers: {
+"Content-Type": "application/json",
+"apikey": SUPABASE_ANON_KEY,
+"Authorization": "Bearer " + SUPABASE_ANON_KEY
+},
+body: JSON.stringify({sid})
+});
+
+const result = await response.json();
+
+if (!response.ok || !result.success) {
+throw new Error(result.error || "Lookup failed.");
+}
+
+const user = result.data?.data?.user;
+
+if (!user) {
+throw new Error("No profile information was returned.");
+}
+
+document.getElementById("avatar").src = user.profile_image || "";
+document.getElementById("username").textContent =
+user.stage_name || user.name || "StarMaker User";
+document.getElementById("userid").textContent = "ID: " + user.sid;
+
+const fields = [
+["Name", user.name],
+["Gender", user.gender],
+["User Level", user.user_level],
+["Account Created", user.created_on],
+["Last Updated", user.updated_date],
+["VIP Status", user.is_vip ? "Yes" : "No"],
+["VIP Level", user.vip_level],
+["Family", result.data.data.family ? "Available" : "Not Available"],
+["Achievements", user.achieve_desc]
+];
+
+const details = document.getElementById("details");
+details.replaceChildren();
+
+fields.forEach(([label,value]) => {
+const row = document.createElement("div");
+row.className = "detail";
+
+const left = document.createElement("span");
+left.textContent = label;
+
+const right = document.createElement("span");
+right.textContent =
+value === null || value === undefined || value === ""
+? "N/A" : String(value);
+
+row.append(left,right);
+details.appendChild(row);
+});
+
+profile.style.display = "block";
+status.textContent = "Profile found successfully!";
+
+} catch(error) {
+status.textContent = error.message || "Something went wrong.";
+} finally {
+button.disabled = false;
+}
+}
+
+document.getElementById("sid").addEventListener("keydown",function(event){
+if(event.key === "Enter") lookupUser();
 });
 </script>
 </body>
