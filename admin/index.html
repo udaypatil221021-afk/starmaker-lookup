@@ -4,285 +4,587 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>StarMaker Lookup - Admin</title>
+<title>StarMaker Lookup</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}
-body{margin:0;padding:16px;background:#101322;color:white;font-family:Arial,sans-serif}
-.container{max-width:950px;margin:25px auto}
-.card{background:#1b2035;padding:20px;border-radius:14px;margin-bottom:16px}
-h1,h2{color:#ffb347}
-h1{text-align:center}
-input,textarea,select{width:100%;padding:12px;margin:8px 0;background:#101322;color:white;border:1px solid #454b62;border-radius:8px}
-button{padding:12px 16px;border:0;border-radius:8px;background:#ff9d35;color:#111;font-weight:bold;cursor:pointer;margin:5px 0}
+body{margin:0;background:#0b1020;color:#fff;font-family:Arial,sans-serif}
+header{text-align:center;padding:25px 12px;background:linear-gradient(120deg,#7119a7,#183d83)}
+header h1{margin:0;font-size:27px}
+header p{color:#ddd;margin-bottom:0}
+main{max-width:850px;margin:24px auto;padding:0 14px}
+.tabs{display:flex;gap:9px;margin-bottom:12px}
+.tab{flex:1;background:#202b45;color:white;border:1px solid #46516e}
+.tab.active{background:#ff942f;color:#171717}
+.search{display:flex;gap:9px;flex-wrap:wrap;background:#171f36;padding:14px;border-radius:13px}
+input{flex:1;min-width:180px;padding:14px;border:1px solid #46516e;border-radius:9px;background:#0c1427;color:white;font-size:16px}
+button{padding:14px 22px;border:0;border-radius:9px;background:#ff942f;color:#171717;font-weight:bold;cursor:pointer}
 button:disabled{opacity:.6}
-.secondary{background:#444;color:white}
-.danger{background:#c94343;color:white}
-.green{background:#218b57;color:white}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
-.stat{background:#252c46;padding:16px;border-radius:10px}
-.stat strong{display:block;font-size:25px;color:#ffb347;margin-top:8px}
+#status{text-align:center;color:#ffbf71;margin:15px 0;overflow-wrap:anywhere}
+.card{background:#151d32;border:1px solid #293651;border-radius:14px;padding:17px;margin:15px 0}
+.profile{text-align:center}
+.avatar{width:110px;height:110px;object-fit:cover;border-radius:50%;border:3px solid #ff9b39}
+.name{font-size:23px;font-weight:bold;margin:12px 0;overflow-wrap:anywhere}
+.muted{color:#aebbd2;font-size:14px;overflow-wrap:anywhere}
+.pills{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:12px}
+.pill,.tag{background:#293651;padding:7px 11px;border-radius:20px;font-size:13px;display:inline-block;margin:3px}
+.tag{background:#44306a;color:#e4caff;border-radius:8px}
+h2{font-size:19px;color:#ffb45e;margin:0 0 14px}
+h3{font-size:17px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:10px}
+.item{background:#0e172b;padding:12px;border-radius:9px;min-width:0}
+.item small{display:block;color:#9eacc5;margin-bottom:6px}
+.item strong{font-size:14px;overflow-wrap:anywhere}
+.item img{max-width:100%;max-height:95px;object-fit:contain}
+.cover{width:100%;max-height:210px;object-fit:cover;border-radius:10px}
+.family-icon{width:72px;height:72px;object-fit:cover;border-radius:13px}
+.family-head{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:12px 0}
+.avatar-list{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.avatar-list img{width:55px;height:55px;object-fit:cover;border-radius:50%;border:2px solid #ff9b39}
 .hidden{display:none!important}
-.message{padding:12px;background:#303750;border-radius:8px;margin:10px 0;overflow-wrap:anywhere}
-.item{padding:12px;background:#252c46;border-radius:8px;margin:8px 0;overflow-wrap:anywhere}
-.small{color:#b8bfd3;font-size:13px}
-table{width:100%;border-collapse:collapse;font-size:13px}
-td,th{padding:9px;border-bottom:1px solid #454b62;text-align:left}
-.table-wrap{overflow-x:auto}
-.tool-card{background:#252c46;padding:14px;border-radius:10px;margin:10px 0}
-.tool-title{font-size:17px;font-weight:bold}
-.tool-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
-label{display:block;margin-top:8px;color:#ddd}
+.announcement{max-width:850px;margin:15px auto;padding:12px 16px;background:#44306a;color:white;border-radius:10px;text-align:center}
+@media(max-width:480px){
+.search button{width:100%}
+.card{padding:13px}
+.tabs button{padding:12px 7px;font-size:13px}
+}
 </style>
 </head>
 <body>
-<div class="container">
-<h1>⭐ StarMaker Lookup Admin</h1>
 
-<div class="card" id="loginBox">
-<h2>Admin Login</h2>
-<input id="email" type="email" placeholder="Admin Email">
-<input id="password" type="password" placeholder="Password">
-<button id="loginBtn" onclick="login()">LOGIN</button>
-<div id="loginMessage" class="message hidden"></div>
+<header>
+<h1>⭐ StarMaker Lookup</h1>
+<p>Search StarMaker User &amp; Room Information</p>
+</header>
+
+<main>
+<div class="tabs">
+<button type="button" id="idTab" class="tab active">ID LOOKUP</button>
+<button type="button" id="roomTab" class="tab">ROOM LINK LOOKUP</button>
 </div>
 
-<div id="dashboard" class="hidden">
+<form class="search" id="lookupForm">
+<input id="userId" type="text" placeholder="Enter StarMaker User ID" required>
+<button id="searchBtn" type="submit">LOOKUP</button>
+</form>
 
-<div class="card">
-<h2>Admin Dashboard</h2>
-<div id="adminEmail" class="message"></div>
-<button onclick="refreshAll()">REFRESH DASHBOARD</button>
-<button class="secondary" onclick="logout()">LOGOUT</button>
-</div>
+<form class="search hidden" id="roomForm">
+<input id="roomLink" type="url" placeholder="Paste full StarMaker Room Share Link" required>
+<button id="roomSearchBtn" type="submit">ROOM LOOKUP</button>
+</form>
 
-<div class="card">
-<h2>📊 Website Statistics</h2>
-<div class="grid">
-<div class="stat">Live Users<strong id="liveUsers">0</strong><span class="small">Last 5 minutes</span></div>
-<div class="stat">Total Views<strong id="totalViews">0</strong></div>
-<div class="stat">ID Searches<strong id="idSearches">0</strong></div>
-<div class="stat">Room Searches<strong id="roomSearches">0</strong></div>
-</div>
-<div id="statsMessage" class="small"></div>
-</div>
-
-<div class="card">
-<h2>🔎 Search History</h2>
-<button onclick="loadHistory()">REFRESH HISTORY</button>
-<div class="table-wrap">
-<table>
-<thead><tr><th>Type</th><th>Search Value</th><th>Time</th></tr></thead>
-<tbody id="historyBody"><tr><td colspan="3">Loading...</td></tr></tbody>
-</table>
-</div>
-</div>
-
-<div class="card">
-<h2>🧰 Tools Manager</h2>
-<p class="small">Add and manage tools that will appear on your public website after the User Panel is connected.</p>
-
-<input type="hidden" id="toolId">
-
-<label>Tool Name</label>
-<input id="toolName" placeholder="Example: QR Code Generator">
-
-<label>Tool URL Slug (English, no spaces)</label>
-<input id="toolSlug" placeholder="Example: qr-code-generator">
-
-<label>Tool Icon / Emoji</label>
-<input id="toolIcon" placeholder="Example: 🔳">
-
-<label>Description</label>
-<textarea id="toolDescription" rows="2" placeholder="What does this tool do?"></textarea>
-
-<label>Tool Type</label>
-<select id="toolType">
-<option value="link">External Website Link</option>
-<option value="builtin">Built-in Website Tool</option>
-</select>
-
-<label>Tool Page URL (for External Website Link)</label>
-<input id="toolUrl" type="url" placeholder="https://example.com/tool">
-
-<label>Display Order</label>
-<input id="toolOrder" type="number" value="0">
-
-<button id="saveToolBtn" onclick="saveTool()">ADD TOOL</button>
-<button class="secondary" onclick="resetToolForm()">CLEAR FORM</button>
-<div id="toolMessage" class="message hidden"></div>
-
-<hr style="border-color:#454b62;margin:20px 0">
-<h3>📚 Added Tools</h3>
-<button onclick="loadTools()">REFRESH TOOLS</button>
-<div id="toolsList">Loading tools...</div>
-</div>
-
-<div class="card">
-<h2>📢 Announcements</h2>
-<textarea id="announcementText" rows="3" placeholder="Write announcement..."></textarea>
-<button onclick="addAnnouncement()">ADD ANNOUNCEMENT</button>
-<div id="announcementList"></div>
-</div>
-
-<div class="card">
-<h2>⚙️ Website Settings</h2>
-<label>Website Name</label>
-<input id="siteName" placeholder="StarMaker Lookup">
-<label>Logo / Icon URL</label>
-<input id="siteLogo" placeholder="https://example.com/logo.png">
-<button onclick="saveSettings()">SAVE WEBSITE SETTINGS</button>
-<div class="message">
-<label>Maintenance Mode</label>
-<div id="maintenanceStatus">Loading...</div>
-<button id="maintenanceBtn" onclick="toggleMaintenance()">TOGGLE MAINTENANCE</button>
-</div>
-<div id="settingsMessage" class="small"></div>
-</div>
-
-</div>
-</div>
+<div id="status" aria-live="polite"></div>
+<div id="results" class="hidden"></div>
+</main>
 
 <script>
 "use strict";
 
 const SUPABASE_URL="https://qjbknoxpuugnypmyjrst.supabase.co";
 const SUPABASE_KEY="sb_publishable_FXhBbTgT-lQZbfiR2BaS-Q__CtG4IjQ";
+
+const FUNCTION_URL=SUPABASE_URL+"/functions/v1/starmaker-id-lookup";
+const ROOM_FUNCTION_URL=SUPABASE_URL+"/functions/v1/starmaker-room-lookup";
+
 const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-let maintenance=false;
+const form=document.getElementById("lookupForm");
+const roomForm=document.getElementById("roomForm");
+const input=document.getElementById("userId");
+const roomInput=document.getElementById("roomLink");
+const button=document.getElementById("searchBtn");
+const roomButton=document.getElementById("roomSearchBtn");
+const statusBox=document.getElementById("status");
+const results=document.getElementById("results");
+const idTab=document.getElementById("idTab");
+const roomTab=document.getElementById("roomTab");
 
-function escapeHTML(value){
- return String(value??"").replace(/[&<>"']/g,c=>({
-  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
- }[c]));
+function getVisitorId(){
+try{
+let id=localStorage.getItem("sm_lookup_visitor");
+if(!id){
+id=(crypto.randomUUID?crypto.randomUUID():
+"visitor-"+Date.now()+"-"+Math.random().toString(36).slice(2));
+localStorage.setItem("sm_lookup_visitor",id);
+}
+return id;
+}catch(e){
+return "visitor-"+Math.random().toString(36).slice(2);
+}
 }
 
-function showLoginMessage(t){
- const b=document.getElementById("loginMessage");
- b.textContent=t;
- b.classList.remove("hidden");
+async function trackEvent(type,value=""){
+try{
+const {error}=await db.from("site_events").insert({
+event_type:type,
+lookup_value:String(value).slice(0,250),
+visitor_id:getVisitorId(),
+page:location.pathname,
+created_at:new Date().toISOString()
+});
+if(error)console.warn("Tracking error:",error.message);
+}catch(e){
+console.warn("Tracking unavailable:",e.message);
+}
 }
 
-async function verifyAdmin(user){
- const {data,error}=await db.from("admin_users")
- .select("user_id,email").eq("user_id",user.id).maybeSingle();
- if(error)throw error;
- if(!data)throw new Error("You are not authorized as Admin.");
- document.getElementById("adminEmail").textContent=data.email;
- document.getElementById("loginBox").classList.add("hidden");
- document.getElementById("dashboard").classList.remove("hidden");
- await refreshAll();
+async function loadPublicSettings(){
+try{
+const {data,error}=await db.from("site_settings")
+.select("setting_key,setting_value")
+.in("setting_key",["site_name","site_logo","maintenance_mode"]);
+
+if(error)throw error;
+
+const settings={};
+(data||[]).forEach(x=>settings[x.setting_key]=x.setting_value);
+
+if(settings.maintenance_mode==="true"){
+document.body.innerHTML='<div style="min-height:100vh;display:grid;place-items:center;text-align:center;padding:25px;background:#0b1020;color:white;font-family:Arial"><div><h1>🔧 Website Maintenance</h1><p>We will be back soon. Please visit again later.</p></div></div>';
+return false;
 }
 
-async function login(){
- const email=document.getElementById("email").value.trim();
- const password=document.getElementById("password").value;
- if(!email||!password){showLoginMessage("Enter email and password.");return;}
- const btn=document.getElementById("loginBtn");
- btn.disabled=true;btn.textContent="PLEASE WAIT...";
- try{
-  const {data,error}=await db.auth.signInWithPassword({email,password});
-  if(error)throw error;
-  await verifyAdmin(data.user);
- }catch(e){
-  await db.auth.signOut();
-  showLoginMessage(e.message);
- }finally{
-  btn.disabled=false;btn.textContent="LOGIN";
- }
+if(settings.site_name){
+document.title=settings.site_name;
+document.querySelector("header h1").textContent="⭐ "+settings.site_name;
 }
 
-async function logout(){
- await db.auth.signOut();
- location.reload();
+if(settings.site_logo){
+try{
+const logo=new URL(settings.site_logo);
+if(logo.protocol==="https:"||logo.protocol==="http:"){
+let icon=document.querySelector("link[rel='icon']");
+if(!icon){
+icon=document.createElement("link");
+icon.rel="icon";
+document.head.appendChild(icon);
+}
+icon.href=logo.href;
+}
+}catch(e){}
+}
+return true;
+}catch(e){
+console.warn("Settings unavailable:",e.message);
+return true;
+}
 }
 
-async function checkSession(){
- const {data}=await db.auth.getSession();
- if(data.session){
-  try{await verifyAdmin(data.session.user);}
-  catch(e){await db.auth.signOut();showLoginMessage(e.message);}
- }
+async function loadPublicAnnouncements(){
+try{
+const {data,error}=await db.from("site_announcements")
+.select("message")
+.eq("is_active",true)
+.order("updated_at",{ascending:false});
+
+if(error)throw error;
+if(!data||!data.length)return;
+
+const box=document.createElement("div");
+box.className="announcement";
+box.textContent="📢 "+data.map(x=>x.message).join(" • ");
+
+const main=document.querySelector("main");
+if(main)main.prepend(box);
+}catch(e){
+console.warn("Announcements unavailable:",e.message);
+}
 }
 
-async function countEvents(type){
- const {count,error}=await db.from("site_events")
- .select("*",{count:"exact",head:true}).eq("event_type",type);
- if(error)throw error;
- return count||0;
+function make(tag,cls,text){
+const e=document.createElement(tag);
+if(cls)e.className=cls;
+if(text!==undefined&&text!==null)e.textContent=String(text);
+return e;
 }
 
-async function loadStats(){
- try{
-  const [views,ids,rooms,live]=await Promise.all([
-   countEvents("page_view"),
-   countEvents("id_lookup"),
-   countEvents("room_lookup"),
-   db.from("site_events").select("visitor_id")
-    .eq("event_type","heartbeat")
-    .gte("created_at",new Date(Date.now()-300000).toISOString())
-  ]);
-  if(live.error)throw live.error;
-  const visitors=new Set((live.data||[]).map(x=>x.visitor_id).filter(Boolean));
-  document.getElementById("liveUsers").textContent=visitors.size;
-  document.getElementById("totalViews").textContent=views;
-  document.getElementById("idSearches").textContent=ids;
-  document.getElementById("roomSearches").textContent=rooms;
-  document.getElementById("statsMessage").textContent="Statistics loaded.";
- }catch(e){
-  document.getElementById("statsMessage").textContent="Statistics error: "+e.message;
- }
+function imageURL(value){
+try{
+const u=new URL(value);
+return u.protocol==="https:"||u.protocol==="http:"?u.href:"";
+}catch{return "";}
 }
 
-async function loadHistory(){
- const body=document.getElementById("historyBody");
- body.innerHTML="<tr><td colspan='3'>Loading...</td></tr>";
- const {data,error}=await db.from("site_events")
- .select("event_type,lookup_value,created_at")
- .order("created_at",{ascending:false}).limit(50);
- if(error){body.innerHTML="<tr><td colspan='3'>"+escapeHTML(error.message)+"</td></tr>";return;}
- if(!data.length){body.innerHTML="<tr><td colspan='3'>No history yet.</td></tr>";return;}
- body.innerHTML=data.map(x=>`<tr>
- <td>${escapeHTML(x.event_type)}</td>
- <td>${escapeHTML(x.lookup_value||"-")}</td>
- <td>${new Date(x.created_at).toLocaleString()}</td>
- </tr>`).join("");
+function addImage(parent,url,alt,cls){
+const src=imageURL(url);
+if(!src)return;
+const img=make("img",cls);
+img.src=src;
+img.alt=alt||"";
+img.loading="lazy";
+img.onerror=()=>img.remove();
+parent.appendChild(img);
 }
 
-/* TOOLS MANAGER */
-
-function showToolMessage(message){
- const box=document.getElementById("toolMessage");
- box.textContent=message;
- box.classList.remove("hidden");
+function item(parent,label,value){
+if(value===undefined||value===null||value==="")return;
+const box=make("div","item");
+box.appendChild(make("small","",label));
+box.appendChild(make("strong","",value));
+parent.appendChild(box);
 }
 
-function resetToolForm(){
- document.getElementById("toolId").value="";
- document.getElementById("toolName").value="";
- document.getElementById("toolSlug").value="";
- document.getElementById("toolIcon").value="";
- document.getElementById("toolDescription").value="";
- document.getElementById("toolType").value="link";
- document.getElementById("toolUrl").value="";
- document.getElementById("toolOrder").value="0";
- document.getElementById("saveToolBtn").textContent="ADD TOOL";
- document.getElementById("toolMessage").classList.add("hidden");
+function imageItem(parent,label,url){
+if(!imageURL(url))return;
+const box=make("div","item");
+box.appendChild(make("small","",label));
+addImage(box,url,label,"");
+parent.appendChild(box);
 }
 
-function makeSlug(value){
- return value.toLowerCase().trim()
- .replace(/[^a-z0-9]+/g,"-")
- .replace(/^-+|-+$/g,"");
+function section(parent,title){
+const box=make("section","card");
+box.appendChild(make("h2","",title));
+parent.appendChild(box);
+return box;
 }
 
-async function saveTool(){
- const id=document.getElementById("toolId").value;
- const name=document.getElementById("toolName").value.trim();
- const slug=makeSlug(document.getElementById("toolSlug").value);
- const icon=document.getElementById("toolIcon").value.trim()||"🛠️";
- const description=document.getElementById("toolDescription").value.trim();
+function showResults(){
+results.replaceChildren();
+results.classList.remove("hidden");
+}
+
+function displayUser(user,family){
+showResults();
+
+const p=section(results,"👤 User Profile");
+p.classList.add("profile");
+addImage(p,user.profile_image,"Profile Picture","avatar");
+
+p.appendChild(make("div","name",user.stage_name||user.name||"Unknown User"));
+
+if(user.signature)p.appendChild(make("p","muted",user.signature));
+
+const badges=make("div","pills");
+if(user.sid)badges.appendChild(make("span","pill","ID: "+user.sid));
+if(user.user_level!==undefined&&user.user_level!==null)
+badges.appendChild(make("span","pill","Level "+user.user_level));
+if(user.is_vip)badges.appendChild(make("span","pill","VIP"));
+if(user.is_pro)badges.appendChild(make("span","pill","PRO"));
+if(user.is_noble)badges.appendChild(make("span","pill","NOBLE"));
+p.appendChild(badges);
+
+const d=make("div","grid");
+item(d,"StarMaker ID",user.sid);
+item(d,"Profile Name",user.name);
+item(d,"Stage Name",user.stage_name);
+item(d,"Bio",user.signature);
+item(d,"Gender",user.gender);
+item(d,"User Level",user.user_level);
+item(d,"Profile Created",user.created_on);
+item(d,"Last Updated",user.updated_date);
+item(d,"VIP Status",user.is_vip===true?"Yes":user.is_vip===false?"No":null);
+item(d,"VIP Level",user.vip_level);
+item(d,"PRO Status",user.is_pro===true?"Yes":user.is_pro===false?"No":null);
+item(d,"Estimated Asset Range",user.asset_range);
+item(d,"Noble Status",user.is_noble===true?"Yes":user.is_noble===false?"No":null);
+item(d,"Noble Title",user.noble_name);
+item(d,"Noble Expiration",user.noble_end_date);
+item(d,"Family ID",user.family_id_in_user);
+p.appendChild(d);
+
+const icons=section(results,"🏅 Profile Icons");
+const ig=make("div","grid");
+imageItem(ig,"VIP Icon",user.vip_level_anim_icon);
+imageItem(ig,"PRO Icon",user.pro_anim_icon);
+imageItem(ig,"Noble Icon",user.noble_icon);
+imageItem(ig,"Verification / Talent Icon",user.v_info_icon);
+imageItem(ig,"Noble Pendant",user.pendant_static_url);
+imageItem(ig,"Animated Pendant",user.pendant_dynamic_url);
+icons.appendChild(ig);
+if(!ig.children.length)icons.appendChild(make("p","muted","No icons available."));
+
+const ach=section(results,"✨ Achievements");
+const achievementText=user.achieve_desc||"";
+if(achievementText){
+achievementText.split(/[；;]/).map(x=>x.trim()).filter(Boolean).forEach(x=>{
+ach.appendChild(make("span","tag",x));
+});
+}else{
+ach.appendChild(make("p","muted","No achievement information available."));
+}
+
+displayFamily(results,family);
+}
+
+function displayFamily(parent,family){
+const f=section(parent,"👑 Family Information");
+
+if(family&&typeof family==="object"&&Object.keys(family).length){
+addImage(f,family.cover_url,"Family Cover","cover");
+
+const head=make("div","family-head");
+addImage(head,family.icon,"Family Icon","family-icon");
+
+const title=make("div");
+title.appendChild(make("h3","",family.name||"Family"));
+if(family.slogan)title.appendChild(make("p","muted",family.slogan));
+head.appendChild(title);
+f.appendChild(head);
+
+const fd=make("div","grid");
+item(fd,"Family ID",family.id);
+item(fd,"Family Name",family.name);
+item(fd,"Slogan",family.slogan);
+item(fd,"Country",family.country);
+item(fd,"Established",family.created_date);
+item(fd,"Members",family.member_num);
+item(fd,"Maximum Members",family.max_member_num);
+item(fd,"Online Members",family.online_num);
+item(fd,"Member Percentage",family.member_percent);
+item(fd,"Online Percentage",family.online_percent);
+f.appendChild(fd);
+
+const fi=make("div","grid");
+imageItem(fi,"Family Level Icon",family.level_icon);
+imageItem(fi,"Family Background",family.background);
+f.appendChild(fi);
+}else{
+f.appendChild(make("p","muted","Family data not available."));
+}
+}
+
+function displayRoom(data){
+showResults();
+
+const room=data.room||{};
+const owner=data.owner||null;
+const family=data.family||null;
+
+const r=section(results,"🎤 Room Information");
+addImage(r,room.cover_image_url,"Room Cover","cover");
+r.appendChild(make("div","name",room.room_name||"StarMaker Room"));
+
+const roomGrid=make("div","grid");
+item(roomGrid,"Room ID",room.room_id);
+item(roomGrid,"Room Category",room.room_category);
+item(roomGrid,"Room Mode",room.room_mode);
+item(roomGrid,"Sub Room Mode",room.sub_room_mode);
+item(roomGrid,"Online Members",room.online_people_count);
+item(roomGrid,"Room Index",room.index);
+r.appendChild(roomGrid);
+
+const o=section(results,"👑 Room Owner");
+o.classList.add("profile");
+addImage(o,owner?.profile_image||room.owner_profile_image,"Owner Profile","avatar");
+
+o.appendChild(make("div","name",
+owner?.stage_name||owner?.name||room.owner_name||"Room Owner"));
+
+const ownerId=owner?.sid||room.owner_id;
+if(ownerId)o.appendChild(make("div","muted","StarMaker ID: "+ownerId));
+
+if(owner){
+if(owner.signature)o.appendChild(make("p","muted",owner.signature));
+
+const badges=make("div","pills");
+if(owner.user_level!==undefined)
+badges.appendChild(make("span","pill","Level "+owner.user_level));
+if(owner.is_vip)badges.appendChild(make("span","pill","VIP"));
+if(owner.is_pro)badges.appendChild(make("span","pill","PRO"));
+if(owner.is_noble)badges.appendChild(make("span","pill","NOBLE"));
+o.appendChild(badges);
+
+const og=make("div","grid");
+item(og,"Profile Name",owner.name);
+item(og,"Stage Name",owner.stage_name);
+item(og,"Bio",owner.signature);
+item(og,"Gender",owner.gender);
+item(og,"Level",owner.user_level);
+item(og,"Profile Created",owner.created_on);
+item(og,"Last Updated",owner.updated_date);
+item(og,"VIP Status",owner.is_vip===true?"Yes":owner.is_vip===false?"No":null);
+item(og,"VIP Level",owner.vip_level);
+item(og,"PRO Status",owner.is_pro===true?"Yes":owner.is_pro===false?"No":null);
+item(og,"Asset Range",owner.asset_range);
+item(og,"Noble Status",owner.is_noble===true?"Yes":owner.is_noble===false?"No":null);
+item(og,"Noble Title",owner.noble_name);
+item(og,"Noble Expiration",owner.noble_end_date);
+o.appendChild(og);
+
+const oi=make("div","grid");
+imageItem(oi,"VIP Icon",owner.vip_level_anim_icon);
+imageItem(oi,"PRO Icon",owner.pro_anim_icon);
+imageItem(oi,"Noble Icon",owner.noble_icon);
+imageItem(oi,"Verification Icon",owner.v_info_icon);
+imageItem(oi,"Pendant",owner.pendant_static_url);
+o.appendChild(oi);
+}else{
+o.appendChild(make("p","muted",
+"Owner's extended profile is currently unavailable. The room API provided the owner's name, ID and photo."
+));
+if(data.owner_lookup_error){
+o.appendChild(make("p","muted","Profile lookup: "+data.owner_lookup_error));
+}
+}
+
+displayFamily(results,family);
+
+const online=section(results,"🟢 Online Members");
+const count=room.online_people_count;
+if(count!==undefined)online.appendChild(make("p","muted","Online now: "+count));
+
+const avatars=room.online_user_avatars||[];
+if(avatars.length){
+const list=make("div","avatar-list");
+avatars.forEach((url,index)=>{
+addImage(list,url,"Online member "+(index+1),"");
+});
+online.appendChild(list);
+}else{
+online.appendChild(make("p","muted","Online member photos unavailable."));
+}
+
+if(data.room_user_id){
+const shared=section(results,"🔗 Share Link Information");
+item(shared,"Share User Name",data.room_user_name);
+item(shared,"Share User ID",data.room_user_id);
+}
+}
+
+async function readResponse(response){
+const text=await response.text();
+let data;
+try{data=JSON.parse(text);}
+catch{throw new Error("Server returned an invalid response.");}
+
+if(!response.ok){
+throw new Error(data.error||data.message||"Request failed.");
+}
+if(data.success===false){
+throw new Error(data.data?.message||data.error||data.message||"Lookup failed.");
+}
+return data;
+}
+
+idTab.addEventListener("click",()=>{
+form.classList.remove("hidden");
+roomForm.classList.add("hidden");
+idTab.classList.add("active");
+roomTab.classList.remove("active");
+statusBox.textContent="";
+results.replaceChildren();
+results.classList.add("hidden");
+});
+
+roomTab.addEventListener("click",()=>{
+roomForm.classList.remove("hidden");
+form.classList.add("hidden");
+roomTab.classList.add("active");
+idTab.classList.remove("active");
+statusBox.textContent="";
+results.replaceChildren();
+results.classList.add("hidden");
+});
+
+form.addEventListener("submit",async(event)=>{
+event.preventDefault();
+
+const sid=input.value.trim();
+if(!sid){
+statusBox.textContent="Please enter a StarMaker ID.";
+return;
+}
+
+button.disabled=true;
+button.textContent="SEARCHING...";
+statusBox.textContent="Searching...";
+results.replaceChildren();
+results.classList.add("hidden");
+
+trackEvent("id_lookup",sid);
+
+try{
+const response=await fetch(FUNCTION_URL,{
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+"apikey":SUPABASE_KEY,
+"Authorization":"Bearer "+SUPABASE_KEY
+},
+body:JSON.stringify({sid:sid,lang:"en"})
+});
+
+const result=await readResponse(response);
+const payload=result.data?.data||result.data||result;
+const user=payload.user;
+const family=payload.family||null;
+
+if(!user)throw new Error("User information not found.");
+
+displayUser(user,family);
+statusBox.textContent="";
+}catch(error){
+statusBox.textContent=error.message||"Something went wrong.";
+}finally{
+button.disabled=false;
+button.textContent="LOOKUP";
+}
+});
+
+roomForm.addEventListener("submit",async(event)=>{
+event.preventDefault();
+
+const link=roomInput.value.trim();
+if(!link){
+statusBox.textContent="Please paste a StarMaker room share link.";
+return;
+}
+
+roomButton.disabled=true;
+roomButton.textContent="SEARCHING...";
+statusBox.textContent="Looking up room...";
+results.replaceChildren();
+results.classList.add("hidden");
+
+let roomId="room_link";
+try{
+const parsed=new URL(link);
+roomId=parsed.searchParams.get("room_id")||roomId;
+}catch(e){}
+
+trackEvent("room_lookup",roomId);
+
+try{
+const response=await fetch(ROOM_FUNCTION_URL,{
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+"apikey":SUPABASE_KEY,
+"Authorization":"Bearer "+SUPABASE_KEY
+},
+body:JSON.stringify({room_link:link})
+});
+
+const data=await readResponse(response);
+if(!data.room)throw new Error("Room information not found.");
+
+displayRoom(data);
+statusBox.textContent="";
+}catch(error){
+statusBox.textContent=error.message||"Room lookup failed.";
+}finally{
+roomButton.disabled=false;
+roomButton.textContent="ROOM LOOKUP";
+}
+});
+
+async function startWebsite(){
+const allowed=await loadPublicSettings();
+if(!allowed)return;
+
+trackEvent("page_view");
+trackEvent("heartbeat");
+setInterval(()=>trackEvent("heartbeat"),30000);
+
+loadPublicAnnouncements();
+}
+
+startWebsite();
+</script>
+</body>
+</html>
+ description=document.getElementById("toolDescription").value.trim();
  const tool_type=document.getElementById("toolType").value;
  const tool_url=document.getElementById("toolUrl").value.trim();
  const sort_order=parseInt(document.getElementById("toolOrder").value,10)||0;
