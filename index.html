@@ -12,15 +12,18 @@ header{text-align:center;padding:25px 12px;background:linear-gradient(120deg,#71
 header h1{margin:0;font-size:27px}
 header p{color:#ddd;margin-bottom:0}
 main{max-width:850px;margin:24px auto;padding:0 14px}
+.tabs{display:flex;gap:9px;margin-bottom:12px}
+.tab{flex:1;background:#202b45;color:white;border:1px solid #46516e}
+.tab.active{background:#ff942f;color:#171717}
 .search{display:flex;gap:9px;flex-wrap:wrap;background:#171f36;padding:14px;border-radius:13px}
 input{flex:1;min-width:180px;padding:14px;border:1px solid #46516e;border-radius:9px;background:#0c1427;color:white;font-size:16px}
-button{padding:14px 22px;border:0;border-radius:9px;background:#ff942f;color:#171717;font-weight:bold}
+button{padding:14px 22px;border:0;border-radius:9px;background:#ff942f;color:#171717;font-weight:bold;cursor:pointer}
 button:disabled{opacity:.6}
-#status{text-align:center;color:#ffbf71;margin:15px 0}
+#status{text-align:center;color:#ffbf71;margin:15px 0;overflow-wrap:anywhere}
 .card{background:#151d32;border:1px solid #293651;border-radius:14px;padding:17px;margin:15px 0}
 .profile{text-align:center}
 .avatar{width:110px;height:110px;object-fit:cover;border-radius:50%;border:3px solid #ff9b39}
-.name{font-size:23px;font-weight:bold;margin:12px 0}
+.name{font-size:23px;font-weight:bold;margin:12px 0;overflow-wrap:anywhere}
 .muted{color:#aebbd2;font-size:14px;overflow-wrap:anywhere}
 .pills{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:12px}
 .pill,.tag{background:#293651;padding:7px 11px;border-radius:20px;font-size:13px;display:inline-block;margin:3px}
@@ -32,40 +35,71 @@ h3{font-size:17px}
 .item small{display:block;color:#9eacc5;margin-bottom:6px}
 .item strong{font-size:14px;overflow-wrap:anywhere}
 .item img{max-width:100%;max-height:95px;object-fit:contain}
-.cover{width:100%;max-height:190px;object-fit:cover;border-radius:10px}
+.cover{width:100%;max-height:210px;object-fit:cover;border-radius:10px}
 .family-icon{width:72px;height:72px;object-fit:cover;border-radius:13px}
 .family-head{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:12px 0}
+.avatar-list{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.avatar-list img{width:55px;height:55px;object-fit:cover;border-radius:50%;border:2px solid #ff9b39}
 .hidden{display:none!important}
-@media(max-width:480px){.search button{width:100%}.card{padding:13px}}
+.note{background:#0e172b;padding:12px;border-radius:9px;color:#aebbd2;font-size:13px;margin-top:12px}
+@media(max-width:480px){
+ .search button{width:100%}
+ .card{padding:13px}
+ .tabs button{padding:12px 7px;font-size:13px}
+}
 </style>
 </head>
 <body>
 
 <header>
 <h1>⭐ StarMaker Lookup</h1>
-<p>Search StarMaker User Information</p>
+<p>Search StarMaker User & Room Information</p>
 </header>
 
 <main>
+
+<div class="tabs">
+<button type="button" id="idTab" class="tab active">ID LOOKUP</button>
+<button type="button" id="roomTab" class="tab">ROOM LINK LOOKUP</button>
+</div>
+
 <form class="search" id="lookupForm">
 <input id="userId" type="text" placeholder="Enter StarMaker User ID" required>
 <button id="searchBtn" type="submit">LOOKUP</button>
 </form>
+
+<form class="search hidden" id="roomForm">
+<input id="roomLink" type="url" placeholder="Paste full StarMaker Room Share Link" required>
+<button id="roomSearchBtn" type="submit">ROOM LOOKUP</button>
+</form>
+
 <div id="status" aria-live="polite"></div>
 <div id="results" class="hidden"></div>
+
 </main>
 
 <script>
 "use strict";
 
-const FUNCTION_URL="https://qjbknoxpuugnypmyjrst.supabase.co/functions/v1/starmaker-id-lookup";
-const SUPABASE_PUBLISHABLE_KEY="sb_publishable_FXhBbTgT-lQZbfiR2BaS-Q__CtG4IjQ";
+const FUNCTION_URL =
+"https://qjbknoxpuugnypmyjrst.supabase.co/functions/v1/starmaker-id-lookup";
 
-const form=document.getElementById("lookupForm");
-const input=document.getElementById("userId");
-const button=document.getElementById("searchBtn");
-const statusBox=document.getElementById("status");
-const results=document.getElementById("results");
+const ROOM_FUNCTION_URL =
+"https://qjbknoxpuugnypmyjrst.supabase.co/functions/v1/starmaker-room-lookup";
+
+const SUPABASE_PUBLISHABLE_KEY =
+"sb_publishable_FXhBbTgT-lQZbfiR2BaS-Q__CtG4IjQ";
+
+const form = document.getElementById("lookupForm");
+const roomForm = document.getElementById("roomForm");
+const input = document.getElementById("userId");
+const roomInput = document.getElementById("roomLink");
+const button = document.getElementById("searchBtn");
+const roomButton = document.getElementById("roomSearchBtn");
+const statusBox = document.getElementById("status");
+const results = document.getElementById("results");
+const idTab = document.getElementById("idTab");
+const roomTab = document.getElementById("roomTab");
 
 function make(tag,cls,text){
  const e=document.createElement(tag);
@@ -115,20 +149,27 @@ function section(parent,title){
  return box;
 }
 
-function displayUser(user,family){
+function showResults(){
  results.replaceChildren();
  results.classList.remove("hidden");
+}
+
+function displayUser(user,family){
+ showResults();
 
  const p=section(results,"👤 User Profile");
  p.classList.add("profile");
  addImage(p,user.profile_image,"Profile Picture","avatar");
- p.appendChild(make("div","name",user.stage_name||user.name||"Unknown User"));
+
+ p.appendChild(make("div","name",
+ user.stage_name||user.name||"Unknown User"));
 
  if(user.signature)p.appendChild(make("p","muted",user.signature));
 
  const badges=make("div","pills");
  if(user.sid)badges.appendChild(make("span","pill","ID: "+user.sid));
- if(user.user_level!==undefined)badges.appendChild(make("span","pill","Level "+user.user_level));
+ if(user.user_level!==undefined&&user.user_level!==null)
+  badges.appendChild(make("span","pill","Level "+user.user_level));
  if(user.is_vip)badges.appendChild(make("span","pill","VIP"));
  if(user.is_pro)badges.appendChild(make("span","pill","PRO"));
  if(user.is_noble)badges.appendChild(make("span","pill","NOBLE"));
@@ -143,11 +184,11 @@ function displayUser(user,family){
  item(d,"User Level",user.user_level);
  item(d,"Profile Created",user.created_on);
  item(d,"Last Updated",user.updated_date);
- item(d,"VIP Status",user.is_vip?"Yes":"No");
+ item(d,"VIP Status",user.is_vip===true?"Yes":user.is_vip===false?"No":null);
  item(d,"VIP Level",user.vip_level);
- item(d,"PRO Status",user.is_pro?"Yes":"No");
+ item(d,"PRO Status",user.is_pro===true?"Yes":user.is_pro===false?"No":null);
  item(d,"Estimated Asset Range",user.asset_range);
- item(d,"Noble Status",user.is_noble?"Yes":"No");
+ item(d,"Noble Status",user.is_noble===true?"Yes":user.is_noble===false?"No":null);
  item(d,"Noble Title",user.noble_name);
  item(d,"Noble Expiration",user.noble_end_date);
  item(d,"Family ID",user.family_id_in_user);
@@ -162,7 +203,8 @@ function displayUser(user,family){
  imageItem(ig,"Noble Pendant",user.pendant_static_url);
  imageItem(ig,"Animated Pendant",user.pendant_dynamic_url);
  icons.appendChild(ig);
- if(!ig.children.length)icons.appendChild(make("p","muted","No icons available."));
+ if(!ig.children.length)
+  icons.appendChild(make("p","muted","No icons available."));
 
  const ach=section(results,"✨ Achievements");
  const achievementText=user.achieve_desc||"";
@@ -174,7 +216,12 @@ function displayUser(user,family){
   ach.appendChild(make("p","muted","No achievement information available."));
  }
 
- const f=section(results,"👑 Family Information");
+ displayFamily(results,family);
+}
+
+function displayFamily(parent,family){
+ const f=section(parent,"👑 Family Information");
+
  if(family&&typeof family==="object"&&Object.keys(family).length){
   addImage(f,family.cover_url,"Family Cover","cover");
 
@@ -204,12 +251,164 @@ function displayUser(user,family){
   imageItem(fi,"Family Background",family.background);
   f.appendChild(fi);
  }else{
-  f.appendChild(make("p","muted","Family data not available for this profile."));
+  f.appendChild(make("p","muted","Family data not available."));
  }
 }
 
-form.addEventListener("submit",async function(event){
+function displayRoom(data){
+ showResults();
+
+ const room=data.room||{};
+ const owner=data.owner||null;
+ const family=data.family||null;
+
+ const r=section(results,"🎤 Room Information");
+
+ addImage(r,room.cover_image_url,"Room Cover","cover");
+
+ r.appendChild(make("div","name",room.room_name||"StarMaker Room"));
+
+ const roomGrid=make("div","grid");
+ item(roomGrid,"Room ID",room.room_id);
+ item(roomGrid,"Room Category",room.room_category);
+ item(roomGrid,"Room Mode",room.room_mode);
+ item(roomGrid,"Sub Room Mode",room.sub_room_mode);
+ item(roomGrid,"Online Members",room.online_people_count);
+ item(roomGrid,"Room Index",room.index);
+ r.appendChild(roomGrid);
+
+ const o=section(results,"👑 Room Owner");
+
+ addImage(
+  o,
+  owner?.profile_image||room.owner_profile_image,
+  "Owner Profile",
+  "avatar"
+ );
+
+ o.classList.add("profile");
+
+ o.appendChild(make("div","name",
+  owner?.stage_name||owner?.name||room.owner_name||"Room Owner"
+ ));
+
+ const ownerId=owner?.sid||room.owner_id;
+ if(ownerId){
+  o.appendChild(make("div","muted","StarMaker ID: "+ownerId));
+ }
+
+ if(owner){
+  if(owner.signature)o.appendChild(make("p","muted",owner.signature));
+
+  const badges=make("div","pills");
+  if(owner.user_level!==undefined)
+   badges.appendChild(make("span","pill","Level "+owner.user_level));
+  if(owner.is_vip)badges.appendChild(make("span","pill","VIP"));
+  if(owner.is_pro)badges.appendChild(make("span","pill","PRO"));
+  if(owner.is_noble)badges.appendChild(make("span","pill","NOBLE"));
+  o.appendChild(badges);
+
+  const og=make("div","grid");
+  item(og,"Profile Name",owner.name);
+  item(og,"Stage Name",owner.stage_name);
+  item(og,"Bio",owner.signature);
+  item(og,"Gender",owner.gender);
+  item(og,"Level",owner.user_level);
+  item(og,"Profile Created",owner.created_on);
+  item(og,"Last Updated",owner.updated_date);
+  item(og,"VIP Status",owner.is_vip===true?"Yes":owner.is_vip===false?"No":null);
+  item(og,"VIP Level",owner.vip_level);
+  item(og,"PRO Status",owner.is_pro===true?"Yes":owner.is_pro===false?"No":null);
+  item(og,"Asset Range",owner.asset_range);
+  item(og,"Noble Status",owner.is_noble===true?"Yes":owner.is_noble===false?"No":null);
+  item(og,"Noble Title",owner.noble_name);
+  item(og,"Noble Expiration",owner.noble_end_date);
+  o.appendChild(og);
+
+  const oi=make("div","grid");
+  imageItem(oi,"VIP Icon",owner.vip_level_anim_icon);
+  imageItem(oi,"PRO Icon",owner.pro_anim_icon);
+  imageItem(oi,"Noble Icon",owner.noble_icon);
+  imageItem(oi,"Verification Icon",owner.v_info_icon);
+  imageItem(oi,"Pendant",owner.pendant_static_url);
+  o.appendChild(oi);
+ }else{
+  o.appendChild(make("p","muted",
+   "Owner's extended profile is currently unavailable. The room API provided the owner's name, ID and photo."
+  ));
+  if(data.owner_lookup_error){
+   o.appendChild(make("p","muted","Profile lookup: "+data.owner_lookup_error));
+  }
+ }
+
+ displayFamily(results,family);
+
+ const online=section(results,"🟢 Online Members");
+ const count=room.online_people_count;
+ if(count!==undefined){
+  online.appendChild(make("p","muted","Online now: "+count));
+ }
+
+ const avatars=room.online_user_avatars||[];
+ if(avatars.length){
+  const list=make("div","avatar-list");
+  avatars.forEach((url,index)=>{
+   addImage(list,url,"Online member "+(index+1),"");
+  });
+  online.appendChild(list);
+ }else{
+  online.appendChild(make("p","muted","Online member photos unavailable."));
+ }
+
+ if(data.room_user_id){
+  const shared=section(results,"🔗 Share Link Information");
+  item(shared,"Share User Name",data.room_user_name);
+  item(shared,"Share User ID",data.room_user_id);
+ }
+}
+
+async function readResponse(response){
+ const text=await response.text();
+ let data;
+ try{
+  data=JSON.parse(text);
+ }catch{
+  throw new Error("Server returned an invalid response.");
+ }
+ if(!response.ok){
+  throw new Error(data.error||data.message||"Request failed.");
+ }
+ if(data.success===false){
+  throw new Error(
+   data.data?.message||data.error||data.message||"Lookup failed."
+  );
+ }
+ return data;
+}
+
+idTab.addEventListener("click",()=>{
+ form.classList.remove("hidden");
+ roomForm.classList.add("hidden");
+ idTab.classList.add("active");
+ roomTab.classList.remove("active");
+ statusBox.textContent="";
+ results.replaceChildren();
+ results.classList.add("hidden");
+});
+
+roomTab.addEventListener("click",()=>{
+ roomForm.classList.remove("hidden");
+ form.classList.add("hidden");
+ roomTab.classList.add("active");
+ idTab.classList.remove("active");
+ statusBox.textContent="";
+ results.replaceChildren();
+ results.classList.add("hidden");
+});
+
+form.addEventListener("submit",async(event)=>{
  event.preventDefault();
+
  const sid=input.value.trim();
  if(!sid){
   statusBox.textContent="Please enter a StarMaker ID.";
@@ -233,17 +432,13 @@ form.addEventListener("submit",async function(event){
    body:JSON.stringify({sid:sid,lang:"en"})
   });
 
-  const result=await response.json();
-  if(!response.ok){
-   throw new Error(result.message||result.error||"Lookup request failed.");
-  }
-
+  const result=await readResponse(response);
   const payload=result.data?.data||result.data||result;
   const user=payload.user;
   const family=payload.family||null;
 
-  if(result.success===false||!user){
-   throw new Error(result.message||"User information not found.");
+  if(!user){
+   throw new Error("User information not found.");
   }
 
   displayUser(user,family);
@@ -254,6 +449,49 @@ form.addEventListener("submit",async function(event){
  }finally{
   button.disabled=false;
   button.textContent="LOOKUP";
+ }
+});
+
+roomForm.addEventListener("submit",async(event)=>{
+ event.preventDefault();
+
+ const link=roomInput.value.trim();
+ if(!link){
+  statusBox.textContent="Please paste a StarMaker room share link.";
+  return;
+ }
+
+ roomButton.disabled=true;
+ roomButton.textContent="SEARCHING...";
+ statusBox.textContent="Looking up room...";
+ results.replaceChildren();
+ results.classList.add("hidden");
+
+ try{
+  const response=await fetch(ROOM_FUNCTION_URL,{
+   method:"POST",
+   headers:{
+    "Content-Type":"application/json",
+    "apikey":SUPABASE_PUBLISHABLE_KEY,
+    "Authorization":"Bearer "+SUPABASE_PUBLISHABLE_KEY
+   },
+   body:JSON.stringify({room_link:link})
+  });
+
+  const data=await readResponse(response);
+
+  if(!data.room){
+   throw new Error("Room information not found.");
+  }
+
+  displayRoom(data);
+  statusBox.textContent="";
+
+ }catch(error){
+  statusBox.textContent=error.message||"Room lookup failed.";
+ }finally{
+  roomButton.disabled=false;
+  roomButton.textContent="ROOM LOOKUP";
  }
 });
 </script>
