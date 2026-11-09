@@ -3,302 +3,234 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>StarMaker Lookup</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#0b1020;color:#fff;font-family:Arial,sans-serif}
-header{text-align:center;padding:25px 12px;background:linear-gradient(120deg,#7119a7,#183d83)}
-header h1{margin:0;font-size:27px}
-header p{color:#ddd;margin-bottom:0}
-main{max-width:850px;margin:24px auto;padding:0 14px}
-.search{display:flex;gap:9px;flex-wrap:wrap;background:#171f36;padding:14px;border-radius:13px}
-input{flex:1;min-width:180px;padding:14px;border:1px solid #46516e;border-radius:9px;background:#0c1427;color:white;font-size:16px}
-button{padding:14px 22px;border:0;border-radius:9px;background:#ff942f;color:#171717;font-weight:bold}
+body{
+  margin:0;
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  padding:35px 15px;
+  background:#fff;
+  font-family:Arial,sans-serif;
+}
+.container{width:100%;max-width:430px}
+.search-box{
+  display:flex;
+  gap:8px;
+  width:100%;
+}
+input{
+  flex:1;
+  min-width:0;
+  height:48px;
+  border:1px solid #ddd;
+  border-radius:10px;
+  padding:0 14px;
+  font-size:15px;
+  outline:none;
+}
+button{
+  height:48px;
+  padding:0 18px;
+  border:0;
+  border-radius:10px;
+  background:#ff7a18;
+  color:white;
+  font-weight:bold;
+  font-size:14px;
+}
 button:disabled{opacity:.6}
-#status{text-align:center;color:#ffbf71;margin:15px 0}
-.card{background:#151d32;border:1px solid #293651;border-radius:14px;padding:17px;margin:15px 0}
-.profile{text-align:center}
-.avatar{width:110px;height:110px;object-fit:cover;border-radius:50%;border:3px solid #ff9b39}
-.name{font-size:23px;font-weight:bold;margin:12px 0}
-.muted{color:#aebbd2;font-size:14px;overflow-wrap:anywhere}
-.pills{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:12px}
-.pill,.tag{background:#293651;padding:7px 11px;border-radius:20px;font-size:13px;display:inline-block;margin:3px}
-.tag{background:#44306a;color:#e4caff;border-radius:8px}
-h2{font-size:19px;color:#ffb45e;margin:0 0 14px}
-h3{font-size:17px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:10px}
-.item{background:#0e172b;padding:12px;border-radius:9px;min-width:0}
-.item small{display:block;color:#9eacc5;margin-bottom:6px}
-.item strong{font-size:14px;overflow-wrap:anywhere}
-.item img{max-width:100%;max-height:95px;object-fit:contain}
-.cover{width:100%;max-height:190px;object-fit:cover;border-radius:10px}
-.family-icon{width:72px;height:72px;object-fit:cover;border-radius:13px}
-.family-head{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:12px 0}
-.hidden{display:none!important}
-@media(max-width:480px){.search button{width:100%}.card{padding:13px}}
+#status{
+  margin-top:12px;
+  text-align:center;
+  font-size:14px;
+  color:#555;
+}
+#result{
+  display:none;
+  margin-top:20px;
+  border:1px solid #eee;
+  border-radius:14px;
+  padding:16px;
+  overflow-wrap:anywhere;
+}
+.profile{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:15px;
+}
+.profile img{
+  width:68px;
+  height:68px;
+  border-radius:50%;
+  object-fit:cover;
+}
+.profile h3{margin:0 0 5px;font-size:18px}
+.profile p{margin:0;color:#666;font-size:13px}
+.item{
+  padding:9px 0;
+  border-top:1px solid #eee;
+  font-size:14px;
+}
+.item b{color:#333}
+.family{
+  margin-top:15px;
+  padding-top:12px;
+  border-top:1px solid #ddd;
+}
+.family img.cover{
+  width:100%;
+  max-height:130px;
+  object-fit:cover;
+  border-radius:9px;
+  margin-bottom:10px;
+}
+.family img.icon{
+  width:42px;
+  height:42px;
+  object-fit:contain;
+  vertical-align:middle;
+}
 </style>
 </head>
 <body>
-
-<header>
-<h1>⭐ StarMaker Lookup</h1>
-<p>Search StarMaker User Information</p>
-</header>
-
-<main>
-<form class="search" id="lookupForm">
-<input id="userId" type="text" placeholder="Enter StarMaker User ID" required>
-<button id="searchBtn" type="submit">LOOKUP</button>
-</form>
-<div id="status" aria-live="polite"></div>
-<div id="results" class="hidden"></div>
-</main>
+<div class="container">
+  <div class="search-box">
+    <input id="sid" type="text" placeholder="Enter StarMaker ID">
+    <button id="lookupBtn" onclick="lookup()">LOOKUP</button>
+  </div>
+  <div id="status"></div>
+  <div id="result"></div>
+</div>
 
 <script>
-"use strict";
+const FUNCTION_URL =
+"https://qjbknoxpuugnypmyjrst.supabase.co/functions/v1/starmaker-id-lookup";
 
-const FUNCTION_URL="https://qjbknoxpuugnypmyjrst.supabase.co/functions/v1/starmaker-id-lookup";
-const SUPABASE_PUBLISHABLE_KEY="sb_publishable_FXhBbTgT-lQZbfiR2BaS-Q__CtG4IjQ";
+const SUPABASE_PUBLISHABLE_KEY =
+"sb_publishable_FXhBbTgT-lQZbfiR2BaS-Q__CtG4IjQ";
 
-const form=document.getElementById("lookupForm");
-const input=document.getElementById("userId");
-const button=document.getElementById("searchBtn");
-const statusBox=document.getElementById("status");
-const results=document.getElementById("results");
+async function lookup(){
+  const sid = document.getElementById("sid").value.trim();
+  const status = document.getElementById("status");
+  const resultBox = document.getElementById("result");
+  const button = document.getElementById("lookupBtn");
 
-function make(tag,cls,text){
- const e=document.createElement(tag);
- if(cls)e.className=cls;
- if(text!==undefined&&text!==null)e.textContent=String(text);
- return e;
-}
+  resultBox.style.display = "none";
+  resultBox.innerHTML = "";
 
-function imageURL(value){
- try{
-  const u=new URL(value);
-  return u.protocol==="https:"||u.protocol==="http:"?u.href:"";
- }catch{return "";}
-}
-
-function addImage(parent,url,alt,cls){
- const src=imageURL(url);
- if(!src)return;
- const img=make("img",cls);
- img.src=src;
- img.alt=alt||"";
- img.loading="lazy";
- img.onerror=()=>img.remove();
- parent.appendChild(img);
-}
-
-function item(parent,label,value){
- if(value===undefined||value===null||value==="")return;
- const box=make("div","item");
- box.appendChild(make("small","",label));
- box.appendChild(make("strong","",value));
- parent.appendChild(box);
-}
-
-function imageItem(parent,label,url){
- if(!imageURL(url))return;
- const box=make("div","item");
- box.appendChild(make("small","",label));
- addImage(box,url,label,"");
- parent.appendChild(box);
-}
-
-function section(parent,title){
- const box=make("section","card");
- box.appendChild(make("h2","",title));
- parent.appendChild(box);
- return box;
-}
-
-function displayUser(user,family){
- results.replaceChildren();
- results.classList.remove("hidden");
-
- const p=section(results,"👤 User Profile");
- p.classList.add("profile");
- addImage(p,user.profile_image,"Profile Picture","avatar");
- p.appendChild(make("div","name",user.stage_name||user.name||"Unknown User"));
-
- if(user.signature)p.appendChild(make("p","muted",user.signature));
-
- const badges=make("div","pills");
- if(user.sid)badges.appendChild(make("span","pill","ID: "+user.sid));
- if(user.user_level!==undefined)badges.appendChild(make("span","pill","Level "+user.user_level));
- if(user.is_vip)badges.appendChild(make("span","pill","VIP"));
- if(user.is_pro)badges.appendChild(make("span","pill","PRO"));
- if(user.is_noble)badges.appendChild(make("span","pill","NOBLE"));
- p.appendChild(badges);
-
- const d=make("div","grid");
- item(d,"StarMaker ID",user.sid);
- item(d,"Profile Name",user.name);
- item(d,"Stage Name",user.stage_name);
- item(d,"Bio",user.signature);
- item(d,"Gender",user.gender);
- item(d,"User Level",user.user_level);
- item(d,"Profile Created",user.created_on);
- item(d,"Last Updated",user.updated_date);
- item(d,"VIP Status",user.is_vip?"Yes":"No");
- item(d,"VIP Level",user.vip_level);
- item(d,"PRO Status",user.is_pro?"Yes":"No");
- item(d,"Estimated Asset Range",user.asset_range);
- item(d,"Noble Status",user.is_noble?"Yes":"No");
- item(d,"Noble Title",user.noble_name);
- item(d,"Noble Expiration",user.noble_end_date);
- item(d,"Family ID",user.family_id_in_user);
- p.appendChild(d);
-
- const icons=section(results,"🏅 Profile Icons");
- const ig=make("div","grid");
- imageItem(ig,"VIP Icon",user.vip_level_anim_icon);
- imageItem(ig,"PRO Icon",user.pro_anim_icon);
- imageItem(ig,"Noble Icon",user.noble_icon);
- imageItem(ig,"Verification / Talent Icon",user.v_info_icon);
- imageItem(ig,"Noble Pendant",user.pendant_static_url);
- imageItem(ig,"Animated Pendant",user.pendant_dynamic_url);
- icons.appendChild(ig);
- if(!ig.children.length)icons.appendChild(make("p","muted","No icons available."));
-
- const ach=section(results,"✨ Achievements");
- const achievementText=user.achieve_desc||"";
- if(achievementText){
-  achievementText.split(/[；;]/).map(x=>x.trim()).filter(Boolean).forEach(x=>{
-   ach.appendChild(make("span","tag",x));
-  });
- }else{
-  ach.appendChild(make("p","muted","No achievement information available."));
- }
-
- const f=section(results,"👑 Family Information");
- if(family&&typeof family==="object"&&Object.keys(family).length){
-  addImage(f,family.cover_url,"Family Cover","cover");
-
-  const head=make("div","family-head");
-  addImage(head,family.icon,"Family Icon","family-icon");
-  const title=make("div");
-  title.appendChild(make("h3","",family.name||"Family"));
-  if(family.slogan)title.appendChild(make("p","muted",family.slogan));
-  head.appendChild(title);
-  f.appendChild(head);
-
-  const fd=make("div","grid");
-  item(fd,"Family ID",family.id);
-  item(fd,"Family Name",family.name);
-  item(fd,"Slogan",family.slogan);
-  item(fd,"Country",family.country);
-  item(fd,"Established",family.created_date);
-  item(fd,"Members",family.member_num);
-  item(fd,"Maximum Members",family.max_member_num);
-  item(fd,"Online Members",family.online_num);
-  item(fd,"Member Percentage",family.member_percent);
-  item(fd,"Online Percentage",family.online_percent);
-  f.appendChild(fd);
-
-  const fi=make("div","grid");
-  imageItem(fi,"Family Level Icon",family.level_icon);
-  imageItem(fi,"Family Background",family.background);
-  f.appendChild(fi);
- }else{
-  f.appendChild(make("p","muted","Family data not available for this profile."));
- }
-}
-
-form.addEventListener("submit",async function(event){
- event.preventDefault();
- const sid=input.value.trim();
- if(!sid){
-  statusBox.textContent="Please enter a StarMaker ID.";
-  return;
- }
-
- button.disabled=true;
- button.textContent="SEARCHING...";
- statusBox.textContent="Searching...";
- results.replaceChildren();
- results.classList.add("hidden");
-
- try{
-  const response=await fetch(FUNCTION_URL,{
-   method:"POST",
-   headers:{
-    "Content-Type":"application/json",
-    "apikey":SUPABASE_PUBLISHABLE_KEY,
-    "Authorization":"Bearer "+SUPABASE_PUBLISHABLE_KEY
-   },
-   body:JSON.stringify({sid:sid,lang:"en"})
-  });
-
-  const result=await response.json();
-  if(!response.ok){
-   throw new Error(result.message||result.error||"Lookup request failed.");
+  if(!sid){
+    status.textContent = "Please enter a StarMaker ID.";
+    return;
   }
 
-  const payload=result.data?.data||result.data||result;
-  const user=payload.user;
-  const family=payload.family||null;
+  button.disabled = true;
+  status.textContent = "Searching...";
 
-  if(result.success===false||!user){
-   throw new Error(result.message||"User information not found.");
-  }
-
-  displayUser(user,family);
-  statusBox.textContent="";
-
- }catch(error){
-  statusBox.textContent=error.message||"Something went wrong.";
- }finally{
-  button.disabled=false;
-  button.textContent="LOOKUP";
- }
-});
-</script>
-</body>
-</html>
-or(result.message || result.error || "Lookup request failed.");
-  }
-
-  const payload = result.data?.data || result.data || result;
-  const user = payload.user;
-  const family = payload.family || null;
-
-  if (result.success === false || !user) {
-   throw new Error(result.message || "User information not found.");
-  }
-
-  displayUser(user, family);
-  statusBox.textContent = "Lookup completed successfully.";
-
- } catch (error) {
-  statusBox.textContent = "Error: " + (error.message || "Something went wrong.");
- } finally {
-  button.disabled = false;
-  button.textContent = "LOOKUP";
- }
-});
-</script>
-</body>
-</html>
- SUPABASE_PUBLISHABLE_KEY
+  try{
+    const response = await fetch(FUNCTION_URL,{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "apikey":SUPABASE_PUBLISHABLE_KEY,
+        "Authorization":"Bearer "+SUPABASE_PUBLISHABLE_KEY
       },
-      body: JSON.stringify({ sid: sid, lang: "en" })
+      body:JSON.stringify({sid:sid,lang:"en"})
     });
 
     const result = await response.json();
 
-    if (!response.ok) {
-      throw new Error(
-        result.message || result.error || "Lookup request failed."
-      );
+    if(!response.ok){
+      throw new Error(result.message || result.error || "Lookup failed.");
     }
 
     const payload = result.data?.data || result.data || result;
     const user = payload.user;
     const family = payload.family || null;
+
+    if(!user){
+      throw new Error("User information not found.");
+    }
+
+    const safe = value =>
+      String(value ?? "N/A").replace(/[&<>"']/g, char => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",
+        '"':"&quot;","'":"&#39;"
+      }[char]));
+
+    let html = `
+      <div class="profile">
+        <img src="${safe(user.profile_image || "")}" onerror="this.style.display='none'">
+        <div>
+          <h3>${safe(user.name || user.stage_name)}</h3>
+          <p>ID: ${safe(user.sid || sid)}</p>
+        </div>
+      </div>
+      <div class="item"><b>Level:</b> ${safe(user.user_level)}</div>
+      <div class="item"><b>Bio:</b> ${safe(user.signature)}</div>
+      <div class="item"><b>Gender:</b> ${safe(user.gender)}</div>
+      <div class="item"><b>Created:</b> ${safe(user.created_on)}</div>
+      <div class="item"><b>VIP:</b> ${user.is_vip ? "Yes" : "No"}</div>
+      <div class="item"><b>VIP Level:</b> ${safe(user.vip_level)}</div>
+      <div class="item"><b>PRO:</b> ${user.is_pro ? "Yes" : "No"}</div>
+      <div class="item"><b>Estimated Asset:</b> ${safe(user.asset_range)}</div>
+      <div class="item"><b>Noble:</b> ${user.is_noble ? "Yes" : "No"}</div>
+      <div class="item"><b>Noble Title:</b> ${safe(user.noble_name)}</div>
+      <div class="item"><b>Noble Expiry:</b> ${safe(user.noble_end_date)}</div>
+      <div class="item"><b>Achievements:</b> ${safe(user.achieve_desc)}</div>
+    `;
+
+    if(user.vip_level_anim_icon){
+      html += `<div class="item"><b>VIP Icon:</b><br>
+      <img style="max-width:65px;max-height:65px" src="${safe(user.vip_level_anim_icon)}"></div>`;
+    }
+
+    if(user.noble_icon){
+      html += `<div class="item"><b>Noble Icon:</b><br>
+      <img style="max-width:65px;max-height:65px" src="${safe(user.noble_icon)}"></div>`;
+    }
+
+    if(family){
+      html += `
+        <div class="family">
+          <b>Family Information</b>
+          ${family.cover_url ? `<img class="cover" src="${safe(family.cover_url)}">` : ""}
+          <div class="item"><b>Name:</b> ${safe(family.name)}</div>
+          <div class="item"><b>Family ID:</b> ${safe(family.id)}</div>
+          <div class="item"><b>Slogan:</b> ${safe(family.slogan)}</div>
+          <div class="item"><b>Country:</b> ${safe(family.country)}</div>
+          <div class="item"><b>Established:</b> ${safe(family.created_date)}</div>
+          <div class="item"><b>Members:</b> ${safe(family.member_num)} / ${safe(family.max_member_num)}</div>
+          <div class="item"><b>Online Members:</b> ${safe(family.online_num)}</div>
+          ${family.icon ? `<img class="icon" src="${safe(family.icon)}">` : ""}
+          ${family.level_icon ? `<img class="icon" src="${safe(family.level_icon)}">` : ""}
+        </div>
+      `;
+    }
+
+    resultBox.innerHTML = html;
+    resultBox.style.display = "block";
+    status.textContent = "";
+
+  }catch(error){
+    status.textContent = error.message || "Something went wrong.";
+  }finally{
+    button.disabled = false;
+  }
+}
+
+document.getElementById("sid").addEventListener("keydown",function(event){
+  if(event.key === "Enter") lookup();
+});
+</script>
+</body>
+</html>
+|| null;
 
     if (result.success === false || !user) {
       throw new Error(result.message || "User information not found.");
