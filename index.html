@@ -7,177 +7,296 @@
 <title>StarMaker Lookup</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#101426;color:white}
-header{padding:22px;text-align:center;background:#191f39;border-bottom:1px solid #343c60}
-.logo{font-size:27px;font-weight:bold;color:#ffbd52}
-header p{color:#bdc4df;font-size:13px}
-.container{max-width:750px;margin:35px auto;padding:15px}
-.card{background:#1b2340;border:1px solid #343d63;border-radius:18px;padding:25px;margin-bottom:20px}
-h2{text-align:center;margin-top:0}
-input{width:100%;padding:16px;border-radius:10px;border:1px solid #596486;background:#10182f;color:white;font-size:16px;margin:15px 0}
-button{width:100%;padding:15px;border:0;border-radius:10px;background:linear-gradient(90deg,#ff8b36,#ffc34e);font-size:16px;font-weight:bold;cursor:pointer}
-button:disabled{opacity:.6}
-#status{text-align:center;color:#ffcf72;margin-top:15px}
-.profile{display:none;margin-top:22px}
-.profile img{width:105px;height:105px;border-radius:50%;object-fit:cover;border:3px solid #ffbd52}
-.profile-top{text-align:center}
-.profile-top h2{margin-bottom:5px;overflow-wrap:anywhere}
-.details{margin-top:20px}
-.detail{display:flex;justify-content:space-between;gap:15px;padding:12px 5px;border-bottom:1px solid #394363}
-.detail span:first-child{color:#aeb9da}
-.detail span:last-child{text-align:right;overflow-wrap:anywhere}
-.note{text-align:center;color:#9ca8c9;font-size:12px;margin-top:25px}
+body{margin:0;background:#0b1020;color:#f5f6ff;font-family:Arial,sans-serif}
+header{text-align:center;padding:25px 12px;background:linear-gradient(120deg,#6418a8,#172c73)}
+header h1{margin:0;font-size:28px}
+header p{margin:8px 0 0;color:#ddd}
+.container{max-width:850px;margin:24px auto;padding:0 14px}
+.search{display:flex;gap:8px;flex-wrap:wrap;background:#151d32;padding:14px;border-radius:14px}
+input{flex:1;min-width:180px;padding:14px;border:1px solid #394664;border-radius:9px;background:#0c1427;color:white;font-size:16px}
+button{padding:14px 22px;border:0;border-radius:9px;background:#ff8a26;color:#151515;font-weight:bold;font-size:15px;cursor:pointer}
+button:disabled{opacity:.6;cursor:wait}
+#status{text-align:center;margin:16px 0;color:#ffc66d}
+.card{background:#151d32;border:1px solid #293651;border-radius:15px;padding:18px;margin:16px 0}
+.profile{text-align:center}
+.avatar{width:112px;height:112px;object-fit:cover;border-radius:50%;border:3px solid #ff9b39;background:#293651}
+.name{font-size:23px;font-weight:bold;margin:12px 0 5px;overflow-wrap:anywhere}
+.muted{color:#aebbd2;font-size:14px}
+.pills{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:12px 0}
+.pill{background:#293651;padding:7px 12px;border-radius:20px;font-size:13px}
+h2{font-size:19px;color:#ffb45e;margin:0 0 14px}
+h3{font-size:16px;margin:10px 0;color:#fff}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.item{background:#0e172b;padding:12px;border-radius:9px;min-width:0}
+.item small{display:block;color:#9eacc5;margin-bottom:6px}
+.item strong{overflow-wrap:anywhere;font-size:14px}
+.image-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.image-row img{max-width:100%;object-fit:contain;border-radius:9px;background:#293651}
+.family-cover{width:100%;max-height:190px;object-fit:cover}
+.family-icon{width:76px;height:76px;border-radius:14px}
+.tag{display:inline-block;background:#44306a;color:#e4caff;padding:7px 10px;border-radius:8px;margin:4px;font-size:13px}
+.hidden{display:none!important}
+.footer{text-align:center;color:#8390a8;font-size:12px;padding:25px}
+@media(max-width:480px){header h1{font-size:23px}.search button{width:100%}.card{padding:14px}}
 </style>
 </head>
 <body>
 
 <header>
-<div class="logo">⭐ StarMaker Lookup</div>
-<p>Discover public StarMaker profile information</p>
+  <h1>⭐ StarMaker Lookup</h1>
+  <p>Search StarMaker user information</p>
 </header>
 
-<div class="container">
-<div class="card">
-<h2>StarMaker ID Lookup</h2>
-<p style="text-align:center;color:#b9c4e2">
-Enter a StarMaker User ID
-</p>
+<main class="container">
+  <form class="search" id="lookupForm">
+    <input id="userId" type="text" placeholder="Enter StarMaker User ID" required>
+    <button id="searchBtn" type="submit">LOOKUP</button>
+  </form>
 
-<input id="sid" type="text" inputmode="numeric"
-placeholder="Enter StarMaker User ID">
+  <div id="status"></div>
+  <div id="results" class="hidden"></div>
+</main>
 
-<button id="lookupBtn" onclick="lookupUser()">
-LOOKUP PROFILE
-</button>
-
-<div id="status"></div>
-
-<div class="profile" id="profile">
-<div class="profile-top">
-<img id="avatar" alt="Profile picture">
-<h2 id="username"></h2>
-<div id="userid" style="color:#b9c4e2"></div>
-</div>
-<div class="details" id="details"></div>
-</div>
-</div>
-
-<div class="card">
-<h2>Room Lookup</h2>
-<p style="text-align:center;color:#b9c4e2">
-Room Lookup will be added in the next step.
-</p>
-</div>
-
-<div class="note">
-StarMaker Lookup · Public profile information
-</div>
-</div>
+<div class="footer">StarMaker Lookup</div>
 
 <script>
 const FUNCTION_URL =
 "https://qjbknoxpuugnypmyjrst.supabase.co/functions/v1/starmaker-id-lookup";
 
-const SUPABASE_ANON_KEY =
-"sb_publishable_FXhBbTgT-lQZbfiR2BaS-Q__CtG4IjQ";
+/*
+  Replace this placeholder with your Supabase Publishable Key.
+  Use the sb_publishable_ key only.
+  Never put your Supabase secret key here.
+*/
+const SUPABASE_PUBLISHABLE_KEY =
+"PASTE_YOUR_SUPABASE_PUBLISHABLE_KEY_HERE";
 
-async function lookupUser(){
+const form = document.getElementById("lookupForm");
+const input = document.getElementById("userId");
+const button = document.getElementById("searchBtn");
+const statusBox = document.getElementById("status");
+const results = document.getElementById("results");
 
-const sid=document.getElementById("sid").value.trim();
-const status=document.getElementById("status");
-const button=document.getElementById("lookupBtn");
-const profile=document.getElementById("profile");
-
-profile.style.display="none";
-
-if(!/^\d{5,20}$/.test(sid)){
-status.textContent="Please enter a valid StarMaker ID.";
-return;
+function makeElement(tag, className, text) {
+  const el = document.createElement(tag);
+  if (className) el.className = className;
+  if (text !== undefined && text !== null) el.textContent = String(text);
+  return el;
 }
 
-button.disabled=true;
-status.textContent="Searching profile...";
+function safeImageUrl(value) {
+  if (!value) return "";
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.href : "";
+  } catch {
+    return "";
+  }
+}
 
-try{
+function addImage(parent, url, alt, className) {
+  const safeUrl = safeImageUrl(url);
+  if (!safeUrl) return null;
 
-const response=await fetch(FUNCTION_URL,{
-method:"POST",
-headers:{
-"Content-Type":"application/json",
-"apikey":SUPABASE_ANON_KEY,
-"Authorization":"Bearer "+SUPABASE_ANON_KEY
-},
-body:JSON.stringify({sid})
+  const img = document.createElement("img");
+  img.src = safeUrl;
+  img.alt = alt || "";
+  img.className = className || "";
+  img.loading = "lazy";
+  img.onerror = () => img.remove();
+  parent.appendChild(img);
+  return img;
+}
+
+function addItem(parent, label, value) {
+  if (value === undefined || value === null || value === "") return;
+  const item = makeElement("div", "item");
+  item.appendChild(makeElement("small", "", label));
+  item.appendChild(makeElement("strong", "", value));
+  parent.appendChild(item);
+}
+
+function addImageItem(parent, label, url) {
+  const safeUrl = safeImageUrl(url);
+  if (!safeUrl) return;
+
+  const item = makeElement("div", "item");
+  item.appendChild(makeElement("small", "", label));
+  addImage(item, safeUrl, label, "");
+  parent.appendChild(item);
+}
+
+function addSection(parent, title) {
+  const section = makeElement("section", "card");
+  section.appendChild(makeElement("h2", "", title));
+  parent.appendChild(section);
+  return section;
+}
+
+function displayUser(user, family) {
+  results.replaceChildren();
+  results.classList.remove("hidden");
+
+  // PROFILE
+  const profile = addSection(results, "👤 User Profile");
+  profile.classList.add("profile");
+
+  addImage(profile, user.profile_image, "Profile picture", "avatar");
+
+  profile.appendChild(makeElement("div", "name",
+    user.stage_name || user.name || "Unknown User"));
+
+  if (user.signature) {
+    profile.appendChild(makeElement("p", "muted", user.signature));
+  }
+
+  const pills = makeElement("div", "pills");
+  if (user.sid) pills.appendChild(makeElement("span", "pill", "ID: " + user.sid));
+  if (user.user_level !== undefined) {
+    pills.appendChild(makeElement("span", "pill", "Level " + user.user_level));
+  }
+  if (user.is_vip) pills.appendChild(makeElement("span", "pill", "VIP"));
+  if (user.is_pro) pills.appendChild(makeElement("span", "pill", "PRO"));
+  if (user.is_noble) pills.appendChild(makeElement("span", "pill", "NOBLE"));
+  profile.appendChild(pills);
+
+  const details = makeElement("div", "grid");
+  addItem(details, "StarMaker ID", user.sid);
+  addItem(details, "Profile Name", user.name);
+  addItem(details, "Stage Name", user.stage_name);
+  addItem(details, "Bio", user.signature);
+  addItem(details, "Gender", user.gender);
+  addItem(details, "User Level", user.user_level);
+  addItem(details, "Profile Created", user.created_on);
+  addItem(details, "Last Updated", user.updated_date);
+  addItem(details, "VIP Status", user.is_vip ? "Yes" : "No");
+  addItem(details, "VIP Level", user.vip_level);
+  addItem(details, "PRO Status", user.is_pro ? "Yes" : "No");
+  addItem(details, "Estimated Asset Range", user.asset_range);
+  addItem(details, "Noble Status", user.is_noble ? "Yes" : "No");
+  addItem(details, "Noble Title", user.noble_name);
+  addItem(details, "Noble Expiration", user.noble_end_date);
+  addItem(details, "Family ID", user.family_id_in_user);
+  profile.appendChild(details);
+
+  // USER BADGES / ICONS
+  const icons = addSection(results, "🏅 Profile Badges & Icons");
+  const iconGrid = makeElement("div", "grid");
+  addImageItem(iconGrid, "VIP Icon", user.vip_level_anim_icon);
+  addImageItem(iconGrid, "PRO Icon", user.pro_anim_icon);
+  addImageItem(iconGrid, "Noble Icon", user.noble_icon);
+  addImageItem(iconGrid, "Profile Verification / Talent Icon", user.v_info_icon);
+  addImageItem(iconGrid, "Noble Pendant", user.pendant_static_url);
+  addImageItem(iconGrid, "Noble Animated Pendant", user.pendant_dynamic_url);
+  icons.appendChild(iconGrid);
+
+  if (!iconGrid.children.length) {
+    icons.appendChild(makeElement("p", "muted", "No badge icons available."));
+  }
+
+  // ACHIEVEMENTS
+  const achievementSection = addSection(results, "✨ Achievements");
+  const achievementText = user.achieve_desc || "";
+  if (achievementText) {
+    const tags = achievementText.split(/[；;]/).map(x => x.trim()).filter(Boolean);
+    tags.forEach(tag => achievementSection.appendChild(makeElement("span", "tag", tag)));
+  } else {
+    achievementSection.appendChild(makeElement("p", "muted", "No achievement information available."));
+  }
+
+  // FAMILY
+  const familySection = addSection(results, "👑 Family Information");
+
+  if (family && typeof family === "object" && Object.keys(family).length) {
+    addImage(familySection, family.cover_url, "Family cover", "family-cover");
+
+    const familyHeading = makeElement("div", "image-row");
+    addImage(familyHeading, family.icon, "Family icon", "family-icon");
+
+    const familyTitle = makeElement("div");
+    familyTitle.appendChild(makeElement("h3", "", family.name || "Family"));
+    if (family.slogan) familyTitle.appendChild(makeElement("p", "muted", family.slogan));
+    familyHeading.appendChild(familyTitle);
+    familySection.appendChild(familyHeading);
+
+    const familyDetails = makeElement("div", "grid");
+    addItem(familyDetails, "Family ID", family.id);
+    addItem(familyDetails, "Family Name", family.name);
+    addItem(familyDetails, "Slogan", family.slogan);
+    addItem(familyDetails, "Country", family.country);
+    addItem(familyDetails, "Established", family.created_date);
+    addItem(familyDetails, "Members", family.member_num);
+    addItem(familyDetails, "Maximum Members", family.max_member_num);
+    addItem(familyDetails, "Online Members", family.online_num);
+    addItem(familyDetails, "Member Percentage", family.member_percent);
+    addItem(familyDetails, "Online Percentage", family.online_percent);
+    familySection.appendChild(familyDetails);
+
+    const familyImages = makeElement("div", "grid");
+    addImageItem(familyImages, "Family Level Icon", family.level_icon);
+    addImageItem(familyImages, "Family Background", family.background);
+    familySection.appendChild(familyImages);
+  } else {
+    familySection.appendChild(makeElement("p", "muted",
+      "Family data not available for this profile."));
+  }
+}
+
+form.addEventListener("submit", async function(event) {
+  event.preventDefault();
+
+  const sid = input.value.trim();
+  if (!sid) {
+    statusBox.textContent = "Please enter a StarMaker ID.";
+    return;
+  }
+
+  if (SUPABASE_PUBLISHABLE_KEY === "PASTE_YOUR_SUPABASE_PUBLISHABLE_KEY_HERE") {
+    statusBox.textContent = "Please add your Supabase Publishable Key in the code first.";
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = "SEARCHING...";
+  statusBox.textContent = "Searching StarMaker profile...";
+  results.replaceChildren();
+  results.classList.add("hidden");
+
+  try {
+    const response = await fetch(FUNCTION_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_PUBLISHABLE_KEY,
+        "Authorization": "Bearer " + SUPABASE_PUBLISHABLE_KEY
+      },
+      body: JSON.stringify({ sid: sid, lang: "en" })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || result.error || "Lookup request failed.");
+    }
+
+    // Supports the nested response returned by the current Edge Function.
+    const payload = result.data?.data || result.data || result;
+    const user = payload.user;
+    const family = payload.family || null;
+
+    if (result.success === false || !user) {
+      throw new Error(result.message || "User information not found.");
+    }
+
+    displayUser(user, family);
+    statusBox.textContent = "Lookup completed successfully.";
+  } catch (error) {
+    statusBox.textContent = "Error: " + (error.message || "Something went wrong.");
+  } finally {
+    button.disabled = false;
+    button.textContent = "LOOKUP";
+  }
 });
-
-const result=await response.json();
-
-if(!response.ok || !result.success){
-throw new Error(result.error || "Lookup failed.");
-}
-
-const user=result.data?.data?.user;
-
-if(!user){
-throw new Error("No profile information was returned.");
-}
-
-const avatar=document.getElementById("avatar");
-avatar.src=user.profile_image || "";
-avatar.onerror=()=>{avatar.removeAttribute("src");};
-
-document.getElementById("username").textContent=
-user.stage_name || user.name || "StarMaker User";
-
-document.getElementById("userid").textContent=
-"ID: "+(user.sid || sid);
-
-const fields=[
-["Name",user.name],
-["Gender",user.gender],
-["User Level",user.user_level],
-["Account Created",user.created_on],
-["Last Updated",user.updated_date],
-["VIP Status",user.is_vip ? "Yes":"No"],
-["VIP Level",user.vip_level],
-["Family",result.data.data.family ? "Available":"Not Available"],
-["Achievements",user.achieve_desc]
-];
-
-const details=document.getElementById("details");
-details.replaceChildren();
-
-fields.forEach(([label,value])=>{
-const row=document.createElement("div");
-row.className="detail";
-
-const left=document.createElement("span");
-left.textContent=label;
-
-const right=document.createElement("span");
-right.textContent=
-value===null || value===undefined || value===""
-?"N/A":String(value);
-
-row.append(left,right);
-details.appendChild(row);
-});
-
-profile.style.display="block";
-status.textContent="Profile found successfully!";
-
-}catch(error){
-status.textContent=error.message || "Something went wrong.";
-}finally{
-button.disabled=false;
-}
-}
-
-document.getElementById("sid").addEventListener(
-"keydown",function(event){
-if(event.key==="Enter") lookupUser();
-}
-);
 </script>
 </body>
 </html>
