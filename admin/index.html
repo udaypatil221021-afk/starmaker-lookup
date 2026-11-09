@@ -8,113 +8,305 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#101322;color:white;font-family:Arial,sans-serif;padding:20px}
-.container{max-width:650px;margin:50px auto}
-.card{background:#1b2035;padding:25px;border-radius:16px;margin-bottom:18px}
-h1{text-align:center;color:#ffb347}
-h2{color:#ffb347}
-input{width:100%;padding:14px;margin:9px 0;border:1px solid #444;border-radius:8px;background:#101322;color:white}
-button{padding:13px 18px;border:0;border-radius:8px;background:#ff9d35;color:#111;font-weight:bold;width:100%;margin-top:10px}
-button.secondary{background:#444;color:white}
+body{margin:0;padding:16px;background:#101322;color:white;font-family:Arial,sans-serif}
+.container{max-width:950px;margin:25px auto}
+.card{background:#1b2035;padding:20px;border-radius:14px;margin-bottom:16px}
+h1,h2{color:#ffb347}
+h1{text-align:center}
+input,textarea{width:100%;padding:12px;margin:8px 0;background:#101322;color:white;border:1px solid #454b62;border-radius:8px}
+button{padding:12px 16px;border:0;border-radius:8px;background:#ff9d35;color:#111;font-weight:bold;cursor:pointer;margin:5px 0}
+.secondary{background:#444;color:white}
+.danger{background:#c94343;color:white}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.stat{background:#252c46;padding:16px;border-radius:10px}
+.stat strong{display:block;font-size:25px;color:#ffb347;margin-top:8px}
 .hidden{display:none}
-.message{padding:12px;background:#303750;border-radius:8px;margin-top:12px;overflow-wrap:anywhere}
+.message{padding:12px;background:#303750;border-radius:8px;margin:10px 0;overflow-wrap:anywhere}
+.item{padding:12px;background:#252c46;border-radius:8px;margin:8px 0;overflow-wrap:anywhere}
+.small{color:#b8bfd3;font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+td,th{padding:9px;border-bottom:1px solid #454b62;text-align:left}
+.table-wrap{overflow-x:auto}
 </style>
 </head>
 <body>
 <div class="container">
-  <h1>⭐ StarMaker Lookup</h1>
-  <div class="card" id="loginBox">
-    <h2>Admin Login</h2>
-    <input id="email" type="email" placeholder="Admin Email">
-    <input id="password" type="password" placeholder="Password">
-    <button id="loginBtn" onclick="login()">LOGIN</button>
-    <div id="loginMessage" class="message hidden"></div>
-  </div>
+<h1>⭐ StarMaker Lookup Admin</h1>
 
-  <div class="card hidden" id="dashboard">
-    <h2>Admin Dashboard</h2>
-    <p>Welcome, Admin!</p>
-    <div class="message" id="adminEmail"></div>
-    <div class="message">Admin authentication: Verified</div>
-    <h2>Website Management</h2>
-    <p>ID Lookup: Existing service</p>
-    <p>Room Lookup: Existing service</p>
-    <p>Lookup statistics and history: Not connected yet</p>
-    <button class="secondary" onclick="logout()">LOGOUT</button>
-  </div>
+<div class="card" id="loginBox">
+<h2>Admin Login</h2>
+<input id="email" type="email" placeholder="Admin Email">
+<input id="password" type="password" placeholder="Password">
+<button id="loginBtn" onclick="login()">LOGIN</button>
+<div id="loginMessage" class="message hidden"></div>
+</div>
+
+<div id="dashboard" class="hidden">
+
+<div class="card">
+<h2>Admin Dashboard</h2>
+<div id="adminEmail" class="message"></div>
+<button onclick="refreshAll()">REFRESH DASHBOARD</button>
+<button class="secondary" onclick="logout()">LOGOUT</button>
+</div>
+
+<div class="card">
+<h2>📊 Website Statistics</h2>
+<div class="grid">
+<div class="stat">Live Users<strong id="liveUsers">0</strong><span class="small">Last 5 minutes</span></div>
+<div class="stat">Total Views<strong id="totalViews">0</strong></div>
+<div class="stat">ID Searches<strong id="idSearches">0</strong></div>
+<div class="stat">Room Searches<strong id="roomSearches">0</strong></div>
+</div>
+<div id="statsMessage" class="small"></div>
+</div>
+
+<div class="card">
+<h2>🔎 Search History</h2>
+<button onclick="loadHistory()">REFRESH HISTORY</button>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Type</th><th>Search Value</th><th>Time</th></tr></thead>
+<tbody id="historyBody"><tr><td colspan="3">Loading...</td></tr></tbody>
+</table>
+</div>
+</div>
+
+<div class="card">
+<h2>📢 Announcements</h2>
+<textarea id="announcementText" rows="3" placeholder="Write announcement..."></textarea>
+<button onclick="addAnnouncement()">ADD ANNOUNCEMENT</button>
+<div id="announcementList"></div>
+</div>
+
+<div class="card">
+<h2>⚙️ Website Settings</h2>
+<label>Website Name</label>
+<input id="siteName" placeholder="StarMaker Lookup">
+<label>Logo / Icon URL</label>
+<input id="siteLogo" placeholder="https://example.com/logo.png">
+<button onclick="saveSettings()">SAVE WEBSITE SETTINGS</button>
+<div class="message">
+<label>Maintenance Mode</label>
+<div id="maintenanceStatus">Loading...</div>
+<button id="maintenanceBtn" onclick="toggleMaintenance()">TOGGLE MAINTENANCE</button>
+</div>
+<div id="settingsMessage" class="small"></div>
+</div>
+
+</div>
 </div>
 
 <script>
-const SUPABASE_URL = "https://qjbknoxpuugnypmyjrst.supabase.co";
-const SUPABASE_KEY = "sb_publishable_FXhBbTgT-lQZbfiR2BaS-Q__CtG4IjQ";
+const SUPABASE_URL="https://qjbknoxpuugnypmyjrst.supabase.co";
+const SUPABASE_KEY="sb_publishable_FXhBbTgT-lQZbfiR2BaS-Q__CtG4IjQ";
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-const db = window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let maintenance=false;
 
-function message(text){
-  const box=document.getElementById("loginMessage");
-  box.textContent=text;
-  box.classList.remove("hidden");
+function showLoginMessage(t){
+ const b=document.getElementById("loginMessage");
+ b.textContent=t;
+ b.classList.remove("hidden");
 }
 
 async function verifyAdmin(user){
-  const {data,error}=await db
-    .from("admin_users")
-    .select("user_id,email")
-    .eq("user_id",user.id)
-    .maybeSingle();
-
-  if(error) throw error;
-  if(!data) throw new Error("You are not authorized as Admin.");
-
-  document.getElementById("adminEmail").textContent=data.email;
-  document.getElementById("loginBox").classList.add("hidden");
-  document.getElementById("dashboard").classList.remove("hidden");
+ const {data,error}=await db.from("admin_users")
+ .select("user_id,email").eq("user_id",user.id).maybeSingle();
+ if(error) throw error;
+ if(!data) throw new Error("You are not authorized as Admin.");
+ document.getElementById("adminEmail").textContent=data.email;
+ document.getElementById("loginBox").classList.add("hidden");
+ document.getElementById("dashboard").classList.remove("hidden");
+ await refreshAll();
 }
 
 async function login(){
-  const email=document.getElementById("email").value.trim();
-  const password=document.getElementById("password").value;
-
-  if(!email || !password){
-    message("Please enter email and password.");
-    return;
-  }
-
-  const btn=document.getElementById("loginBtn");
-  btn.disabled=true;
-  btn.textContent="PLEASE WAIT...";
-
-  try{
-    const {data,error}=await db.auth.signInWithPassword({email,password});
-    if(error) throw error;
-    await verifyAdmin(data.user);
-  }catch(e){
-    await db.auth.signOut();
-    message(e.message || "Login failed.");
-  }finally{
-    btn.disabled=false;
-    btn.textContent="LOGIN";
-  }
+ const email=document.getElementById("email").value.trim();
+ const password=document.getElementById("password").value;
+ if(!email||!password){showLoginMessage("Enter email and password.");return;}
+ const btn=document.getElementById("loginBtn");
+ btn.disabled=true;btn.textContent="PLEASE WAIT...";
+ try{
+  const {data,error}=await db.auth.signInWithPassword({email,password});
+  if(error) throw error;
+  await verifyAdmin(data.user);
+ }catch(e){
+  await db.auth.signOut();
+  showLoginMessage(e.message);
+ }finally{
+  btn.disabled=false;btn.textContent="LOGIN";
+ }
 }
 
 async function logout(){
-  await db.auth.signOut();
-  location.reload();
+ await db.auth.signOut();
+ location.reload();
 }
 
 async function checkSession(){
-  const {data}=await db.auth.getSession();
-  if(data.session){
-    try{
-      await verifyAdmin(data.session.user);
-    }catch(e){
-      await db.auth.signOut();
-      message(e.message);
-    }
-  }
+ const {data}=await db.auth.getSession();
+ if(data.session){
+  try{await verifyAdmin(data.session.user);}
+  catch(e){await db.auth.signOut();showLoginMessage(e.message);}
+ }
+}
+
+async function countEvents(type){
+ const {count,error}=await db.from("site_events")
+ .select("*",{count:"exact",head:true}).eq("event_type",type);
+ if(error) throw error;
+ return count||0;
+}
+
+async function loadStats(){
+ try{
+  const [views,ids,rooms,live]=await Promise.all([
+   countEvents("page_view"),
+   countEvents("id_lookup"),
+   countEvents("room_lookup"),
+   db.from("site_events").select("visitor_id")
+    .eq("event_type","page_view")
+    .gte("created_at",new Date(Date.now()-300000).toISOString())
+  ]);
+  if(live.error) throw live.error;
+  const visitors=new Set((live.data||[]).map(x=>x.visitor_id).filter(Boolean));
+  document.getElementById("liveUsers").textContent=visitors.size;
+  document.getElementById("totalViews").textContent=views;
+  document.getElementById("idSearches").textContent=ids;
+  document.getElementById("roomSearches").textContent=rooms;
+  document.getElementById("statsMessage").textContent="Statistics loaded.";
+ }catch(e){
+  document.getElementById("statsMessage").textContent="Statistics error: "+e.message;
+ }
+}
+
+async function loadHistory(){
+ const body=document.getElementById("historyBody");
+ body.innerHTML="<tr><td colspan='3'>Loading...</td></tr>";
+ const {data,error}=await db.from("site_events")
+ .select("event_type,lookup_value,created_at")
+ .order("created_at",{ascending:false}).limit(50);
+ if(error){body.innerHTML="<tr><td colspan='3'>"+escapeHTML(error.message)+"</td></tr>";return;}
+ if(!data.length){body.innerHTML="<tr><td colspan='3'>No history yet.</td></tr>";return;}
+ body.innerHTML=data.map(x=>`<tr>
+ <td>${escapeHTML(x.event_type)}</td>
+ <td>${escapeHTML(x.lookup_value||"-")}</td>
+ <td>${new Date(x.created_at).toLocaleString()}</td>
+ </tr>`).join("");
+}
+
+async function loadAnnouncements(){
+ const box=document.getElementById("announcementList");
+ const {data,error}=await db.from("site_announcements")
+ .select("*").order("updated_at",{ascending:false});
+ if(error){box.textContent=error.message;return;}
+ if(!data.length){box.textContent="No announcements yet.";return;}
+ box.innerHTML=data.map(x=>`
+ <div class="item">
+ <div>${escapeHTML(x.message)}</div>
+ <div class="small">Status: ${x.is_active?"Active":"Hidden"}</div>
+ <button onclick="toggleAnnouncement('${x.updated_at}','${x.is_active}')">SHOW / HIDE</button>
+ <button class="danger" onclick="deleteAnnouncement('${x.updated_at}')">DELETE</button>
+ </div>`).join("");
+}
+
+async function addAnnouncement(){
+ const message=document.getElementById("announcementText").value.trim();
+ if(!message){alert("Write an announcement first.");return;}
+ const {error}=await db.from("site_announcements").insert({
+  message,is_active:true,updated_at:new Date().toISOString()
+ });
+ if(error){alert(error.message);return;}
+ document.getElementById("announcementText").value="";
+ await loadAnnouncements();
+ alert("Announcement added.");
+}
+
+async function deleteAnnouncement(time){
+ if(!confirm("Delete this announcement?"))return;
+ const {error}=await db.from("site_announcements").delete().eq("updated_at",time);
+ if(error){alert(error.message);return;}
+ await loadAnnouncements();
+}
+
+async function toggleAnnouncement(time,status){
+ const active=status!=="true";
+ const {error}=await db.from("site_announcements")
+ .update({is_active:active,updated_at:new Date().toISOString()})
+ .eq("updated_at",time);
+ if(error){alert(error.message);return;}
+ await loadAnnouncements();
+}
+
+async function getSetting(key){
+ const {data,error}=await db.from("site_settings")
+ .select("setting_value").eq("setting_key",key)
+ .order("updated_at",{ascending:false}).limit(1);
+ if(error) throw error;
+ return data&&data.length?data[0].setting_value:"";
+}
+
+async function saveSetting(key,value){
+ const {error:delError}=await db.from("site_settings").delete().eq("setting_key",key);
+ if(delError) throw delError;
+ const {error}=await db.from("site_settings").insert({
+  setting_key:key,setting_value:value,updated_at:new Date().toISOString()
+ });
+ if(error) throw error;
+}
+
+async function loadSettings(){
+ try{
+  document.getElementById("siteName").value=await getSetting("site_name");
+  document.getElementById("siteLogo").value=await getSetting("site_logo");
+  maintenance=(await getSetting("maintenance_mode"))==="true";
+  updateMaintenanceLabel();
+ }catch(e){
+  document.getElementById("settingsMessage").textContent=e.message;
+ }
+}
+
+async function saveSettings(){
+ try{
+  await saveSetting("site_name",document.getElementById("siteName").value.trim());
+  await saveSetting("site_logo",document.getElementById("siteLogo").value.trim());
+  document.getElementById("settingsMessage").textContent="Settings saved in database. Website display integration is still pending.";
+ }catch(e){
+  document.getElementById("settingsMessage").textContent="Error: "+e.message;
+ }
+}
+
+function updateMaintenanceLabel(){
+ document.getElementById("maintenanceStatus").textContent=maintenance?"ON":"OFF";
+ document.getElementById("maintenanceBtn").textContent=maintenance?"TURN OFF":"TURN ON";
+}
+
+async function toggleMaintenance(){
+ try{
+  maintenance=!maintenance;
+  await saveSetting("maintenance_mode",String(maintenance));
+  updateMaintenanceLabel();
+  document.getElementById("settingsMessage").textContent="Maintenance setting saved. Public website integration is still pending.";
+ }catch(e){
+  maintenance=!maintenance;
+  updateMaintenanceLabel();
+  alert(e.message);
+ }
+}
+
+function escapeHTML(value){
+ return String(value??"").replace(/[&<>"']/g,c=>({
+  "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+ }[c]));
+}
+
+async function refreshAll(){
+ await Promise.all([loadStats(),loadHistory(),loadAnnouncements(),loadSettings()]);
 }
 
 checkSession();
 </script>
 </body>
-</html>
+  </html>
+  
