@@ -4,337 +4,461 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>StarMaker Lookup - Admin</title>
+<title>StarMaker Admin Panel</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
+:root{--bg:#f4f6fb;--card:#fff;--text:#182033;--muted:#758098;--primary:#6558e8;--border:#e8eaf1;--danger:#e5484d;--green:#159b69}
 *{box-sizing:border-box}
-body{margin:0;padding:16px;background:#101322;color:white;font-family:Arial,sans-serif}
-.container{max-width:950px;margin:25px auto}
-.card{background:#1b2035;padding:20px;border-radius:14px;margin-bottom:16px}
-h1,h2{color:#ffb347}
-h1{text-align:center}
-input,textarea,select{width:100%;padding:12px;margin:8px 0;background:#101322;color:white;border:1px solid #454b62;border-radius:8px}
-button{padding:12px 16px;border:0;border-radius:8px;background:#ff9d35;color:#111;font-weight:bold;cursor:pointer;margin:5px 0}
-button:disabled{opacity:.6}
-.secondary{background:#444;color:white}
-.danger{background:#c94343;color:white}
-.green{background:#218b57;color:white}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
-.stat{background:#252c46;padding:16px;border-radius:10px}
-.stat strong{display:block;font-size:25px;color:#ffb347;margin-top:8px}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Arial,sans-serif}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer;border:0;border-radius:9px;padding:11px 15px;font-weight:600}
+.primary{background:var(--primary);color:white}
+.danger{background:#fff0f0;color:var(--danger)}
+.secondary{background:#eef0f7;color:#343b50}
 .hidden{display:none!important}
-.message{padding:12px;background:#303750;border-radius:8px;margin:10px 0;overflow-wrap:anywhere}
-.item{padding:12px;background:#252c46;border-radius:8px;margin:8px 0;overflow-wrap:anywhere}
-.small{color:#b8bfd3;font-size:13px}
-table{width:100%;border-collapse:collapse;font-size:13px}
-td,th{padding:9px;border-bottom:1px solid #454b62;text-align:left}
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.login-card{background:white;padding:30px;border-radius:18px;width:100%;max-width:390px;box-shadow:0 12px 40px #20294b12}
+.login-card h2{text-align:center;margin-top:0}
+input,select,textarea{width:100%;padding:12px;border:1px solid var(--border);border-radius:9px;background:white;color:var(--text);outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--primary)}
+.field{margin:13px 0}
+.field label{display:block;font-size:13px;font-weight:600;margin-bottom:7px}
+#app{display:none;min-height:100vh}
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:245px;background:#171a2b;color:white;padding:22px 15px;overflow:auto}
+.brand{font-size:20px;font-weight:800;padding:10px 12px 25px}
+.brand span{color:#a99fff}
+.nav-btn{display:block;width:100%;text-align:left;color:#c5c8d6;background:transparent;margin:4px 0;padding:13px;border-radius:9px}
+.nav-btn.active,.nav-btn:hover{background:#302d50;color:white}
+.sidebar-bottom{margin-top:30px;border-top:1px solid #35384b;padding-top:15px}
+.main{margin-left:245px;padding:25px;max-width:1500px}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:25px}
+.topbar h1{font-size:25px;margin:0}
+.topbar p{color:var(--muted);font-size:13px;margin:6px 0 0}
+.panel{display:none}
+.panel.active{display:block}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px;margin-bottom:22px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:19px;min-width:0}
+.stat-label{color:var(--muted);font-size:13px}
+.stat-number{font-size:28px;font-weight:800;margin-top:12px}
+.section-title{font-size:18px;font-weight:750;margin:0 0 16px}
+.section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:15px}
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 15px}
+.full{grid-column:1/-1}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
 .table-wrap{overflow-x:auto}
-.tool-card{background:#252c46;padding:14px;border-radius:10px;margin:10px 0}
-.tool-title{font-size:17px;font-weight:bold}
-.tool-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
-label{display:block;margin-top:8px;color:#ddd}
+table{width:100%;border-collapse:collapse;min-width:650px}
+th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--border);font-size:13px}
+th{color:var(--muted);font-weight:700;background:#fafbfe}
+td{overflow-wrap:anywhere}
+.status{display:inline-block;padding:5px 9px;border-radius:20px;font-size:11px;font-weight:700;background:#e8f8f0;color:var(--green)}
+.status.off{background:#fff0f0;color:var(--danger)}
+.muted{color:var(--muted);font-size:13px}
+.message{margin:12px 0;font-size:13px}
+.success{color:var(--green)}
+.error{color:var(--danger)}
+.tool-form{margin-bottom:18px}
+.mobile-menu{display:none}
+.empty{text-align:center;padding:25px;color:var(--muted)}
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.sidebar{width:205px}.main{margin-left:205px;padding:18px}}
+@media(max-width:650px){
+.sidebar{display:none;z-index:5;width:250px;box-shadow:10px 0 30px #0002}
+.sidebar.open{display:block}
+.main{margin-left:0;padding:15px}
+.mobile-menu{display:inline-block}
+.topbar h1{font-size:20px}
+.grid{gap:9px}
+.card{padding:14px}
+.stat-number{font-size:23px}
+.form-grid{grid-template-columns:1fr}
+.full{grid-column:auto}
+}
 </style>
 </head>
 <body>
-<div class="container">
-<h1>⭐ StarMaker Lookup Admin</h1>
 
-<div class="card" id="loginBox">
-<h2>Admin Login</h2>
-<input id="email" type="email" placeholder="Admin Email">
-<input id="password" type="password" placeholder="Password">
-<button id="loginBtn" onclick="login()">LOGIN</button>
-<div id="loginMessage" class="message hidden"></div>
+<div id="loginScreen">
+ <div class="login-card">
+  <h2>⭐ StarMaker Admin</h2>
+  <p class="muted" style="text-align:center">Sign in to manage your website</p>
+  <form id="loginForm">
+   <div class="field">
+    <label>Email</label>
+    <input id="email" type="email" placeholder="Admin email" required>
+   </div>
+   <div class="field">
+    <label>Password</label>
+    <input id="password" type="password" placeholder="Password" required>
+   </div>
+   <button class="primary" id="loginBtn" style="width:100%">LOGIN</button>
+  </form>
+  <div id="loginMessage" class="message"></div>
+ </div>
 </div>
 
-<div id="dashboard" class="hidden">
+<div id="app">
+ <aside class="sidebar" id="sidebar">
+  <div class="brand">⭐ StarMaker <span>Admin</span></div>
+  <button class="nav-btn active" data-panel="dashboard">📊 Dashboard</button>
+  <button class="nav-btn" data-panel="history">🔎 Search History</button>
+  <button class="nav-btn" data-panel="tools">🧰 Tools Manager</button>
+  <button class="nav-btn" data-panel="announcements">📢 Announcements</button>
+  <button class="nav-btn" data-panel="settings">⚙️ Website Settings</button>
+  <div class="sidebar-bottom">
+   <button class="nav-btn" id="logoutBtn">↪ Logout</button>
+  </div>
+ </aside>
 
-<div class="card">
-<h2>Admin Dashboard</h2>
-<div id="adminEmail" class="message"></div>
-<button onclick="refreshAll()">REFRESH DASHBOARD</button>
-<button class="secondary" onclick="logout()">LOGOUT</button>
-</div>
+ <main class="main">
+  <div class="topbar">
+   <div style="display:flex;align-items:center;gap:12px">
+    <button class="secondary mobile-menu" id="menuBtn">☰</button>
+    <div>
+     <h1 id="pageTitle">Dashboard</h1>
+     <p>StarMaker Lookup Management</p>
+    </div>
+   </div>
+   <button class="secondary" id="refreshBtn">↻ Refresh</button>
+  </div>
 
-<div class="card">
-<h2>📊 Website Statistics</h2>
-<div class="grid">
-<div class="stat">Live Users<strong id="liveUsers">0</strong><span class="small">Last 5 minutes</span></div>
-<div class="stat">Total Views<strong id="totalViews">0</strong></div>
-<div class="stat">ID Searches<strong id="idSearches">0</strong></div>
-<div class="stat">Room Searches<strong id="roomSearches">0</strong></div>
-</div>
-<div id="statsMessage" class="small"></div>
-</div>
+  <section class="panel active" id="dashboard">
+   <div class="grid">
+    <div class="card"><div class="stat-label">🟢 Live Users (5 min)</div><div class="stat-number" id="liveUsers">0</div></div>
+    <div class="card"><div class="stat-label">👁 Total Views</div><div class="stat-number" id="totalViews">0</div></div>
+    <div class="card"><div class="stat-label">🔍 ID Searches</div><div class="stat-number" id="idSearches">0</div></div>
+    <div class="card"><div class="stat-label">🎤 Room Searches</div><div class="stat-number" id="roomSearches">0</div></div>
+   </div>
+   <div class="card">
+    <div class="section-head">
+     <h3 class="section-title">Website Overview</h3>
+     <span class="muted" id="lastUpdated">Not refreshed yet</span>
+    </div>
+    <p class="muted">Use the left menu to manage your website, tools, announcements and search history.</p>
+    <div id="dashboardMessage" class="message"></div>
+   </div>
+  </section>
 
-<div class="card">
-<h2>🔎 Search History</h2>
-<button onclick="loadHistory()">REFRESH HISTORY</button>
-<button class="danger" onclick="clearHistory()">CLEAR HISTORY</button>
-<div class="table-wrap">
-<table>
-<thead>
-<tr><th>Type</th><th>Search Value</th><th>Time</th></tr>
-</thead>
-<tbody id="historyBody">
-<tr><td colspan="3">Loading...</td></tr>
-</tbody>
-</table>
-</div>
-</div>
+  <section class="panel" id="history">
+   <div class="card">
+    <div class="section-head">
+     <h3 class="section-title">Search History</h3>
+     <div class="actions">
+      <button class="secondary" onclick="loadHistory()">↻ Refresh</button>
+      <button class="danger" onclick="clearHistory()">Clear History</button>
+     </div>
+    </div>
+    <div id="historyMessage" class="message"></div>
+    <div class="table-wrap">
+     <table>
+      <thead><tr><th>Event</th><th>Search Value</th><th>Page</th><th>Date & Time</th></tr></thead>
+      <tbody id="historyBody"><tr><td colspan="4" class="empty">Loading...</td></tr></tbody>
+     </table>
+    </div>
+   </div>
+  </section>
 
-<div class="card">
-<h2>🧰 Tools Manager</h2>
-<p class="small">Add and manage tools for your public website.</p>
+  <section class="panel" id="tools">
+   <div class="card tool-form">
+    <h3 class="section-title" id="toolFormTitle">Add New Tool</h3>
+    <input type="hidden" id="toolId">
+    <div class="form-grid">
+     <div class="field"><label>Tool Name</label><input id="toolName" placeholder="QR Code Generator"></div>
+     <div class="field"><label>Tool Slug</label><input id="toolSlug" placeholder="qr-code-generator"></div>
+     <div class="field"><label>Tool Icon</label><input id="toolIcon" placeholder="🔳" value="🛠️"></div>
+     <div class="field"><label>Tool Type</label>
+      <select id="toolType" onchange="updateToolUrlField()">
+       <option value="builtin">Built-in Website Tool</option>
+       <option value="link">External Website Link</option>
+      </select>
+     </div>
+     <div class="field full" id="toolUrlWrap"><label>Tool URL (External Link Only)</label><input id="toolUrl" type="url" placeholder="https://example.com"></div>
+     <div class="field full"><label>Description</label><textarea id="toolDescription" rows="2" placeholder="Describe this tool"></textarea></div>
+     <div class="field"><label>Display Order</label><input id="toolOrder" type="number" value="0"></div>
+    </div>
+    <div class="actions">
+     <button class="primary" onclick="saveTool()">Save Tool</button>
+     <button class="secondary" onclick="resetToolForm()">Reset</button>
+    </div>
+    <div id="toolMessage" class="message"></div>
+   </div>
+   <div class="card">
+    <div class="section-head"><h3 class="section-title">Manage Tools</h3><button class="secondary" onclick="loadTools()">↻ Refresh</button></div>
+    <div class="table-wrap">
+     <table>
+      <thead><tr><th>Name</th><th>Type</th><th>Order</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="toolsBody"><tr><td colspan="5" class="empty">Loading...</td></tr></tbody>
+     </table>
+    </div>
+   </div>
+  </section>
 
-<input type="hidden" id="toolId">
+  <section class="panel" id="announcements">
+   <div class="card">
+    <h3 class="section-title">Create Announcement</h3>
+    <div class="field"><label>Announcement Message</label><textarea id="announcementText" rows="3" placeholder="Write announcement..."></textarea></div>
+    <button class="primary" onclick="addAnnouncement()">Publish Announcement</button>
+    <div id="announcementMessage" class="message"></div>
+   </div>
+   <div class="card" style="margin-top:18px">
+    <div class="section-head"><h3 class="section-title">Manage Announcements</h3><button class="secondary" onclick="loadAnnouncements()">↻ Refresh</button></div>
+    <div id="announcementList"></div>
+   </div>
+  </section>
 
-<label>Tool Name</label>
-<input id="toolName" placeholder="Example: QR Code Generator">
-
-<label>Tool URL Slug (English, no spaces)</label>
-<input id="toolSlug" placeholder="Example: qr-code-generator">
-
-<label>Tool Icon / Emoji</label>
-<input id="toolIcon" placeholder="Example: 🔳">
-
-<label>Description</label>
-<textarea id="toolDescription" rows="2" placeholder="What does this tool do?"></textarea>
-
-<label>Tool Type</label>
-<select id="toolType" onchange="updateToolUrlField()">
-<option value="link">External Website Link</option>
-<option value="builtin">Built-in Website Tool</option>
-</select>
-
-<label>Tool Page URL (External Link only)</label>
-<input id="toolUrl" type="url" placeholder="https://example.com/tool">
-<div id="toolUrlHint" class="small">External tools require a valid HTTP or HTTPS URL.</div>
-
-<label>Display Order</label>
-<input id="toolOrder" type="number" value="0">
-
-<button id="saveToolBtn" onclick="saveTool()">ADD TOOL</button>
-<button class="secondary" onclick="resetToolForm()">CLEAR FORM</button>
-<div id="toolMessage" class="message hidden"></div>
-
-<hr style="border-color:#454b62;margin:20px 0">
-<h3>📚 Added Tools</h3>
-<button onclick="loadTools()">REFRESH TOOLS</button>
-<div id="toolsList">Loading tools...</div>
-</div>
-
-<div class="card">
-<h2>📢 Announcements</h2>
-<textarea id="announcementText" rows="3" placeholder="Write announcement..."></textarea>
-<button onclick="addAnnouncement()">ADD ANNOUNCEMENT</button>
-<div id="announcementList"></div>
-</div>
-
-<div class="card">
-<h2>⚙️ Website Settings</h2>
-<label>Website Name</label>
-<input id="siteName" placeholder="StarMaker Lookup">
-
-<label>Logo / Icon URL</label>
-<input id="siteLogo" placeholder="https://example.com/logo.png">
-
-<button onclick="saveSettings()">SAVE WEBSITE SETTINGS</button>
-
-<div class="message">
-<label>Maintenance Mode</label>
-<div id="maintenanceStatus">Loading...</div>
-<button id="maintenanceBtn" onclick="toggleMaintenance()">TOGGLE MAINTENANCE</button>
-</div>
-<div id="settingsMessage" class="small"></div>
-</div>
-
-</div>
+  <section class="panel" id="settings">
+   <div class="card">
+    <h3 class="section-title">Website Settings</h3>
+    <div class="field"><label>Website Name</label><input id="websiteName" placeholder="StarMaker Lookup"></div>
+    <div class="field"><label>Website Icon URL</label><input id="websiteIcon" placeholder="https://example.com/icon.png"></div>
+    <div class="field"><label>Maintenance Mode</label>
+     <select id="maintenanceMode">
+      <option value="false">Website Online</option>
+      <option value="true">Maintenance Mode ON</option>
+     </select>
+    </div>
+    <button class="primary" onclick="saveSettings()">Save Settings</button>
+    <div id="settingsMessage" class="message"></div>
+   </div>
+  </section>
+ </main>
 </div>
 
 <script>
-"use strict";
+const SUPABASE_URL = "https://qjbknoxpuugnypmyjrst.supabase.co";
+const SUPABASE_KEY = "sb_publishable_FXhBbTgT-lQZbfiR2BaS-Q__CtG4IjQ";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const SUPABASE_URL="https://qjbknoxpuugnypmyjrst.supabase.co";
-const SUPABASE_KEY="sb_publishable_FXhBbTgT-lQZbfiR2BaS-Q__CtG4IjQ";
-const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let currentAdmin = null;
 
-let maintenance=false;
-
-function escapeHTML(value){
- return String(value??"").replace(/[&<>"']/g,c=>({
+function el(id){return document.getElementById(id)}
+function msg(id,text,type="success"){
+ el(id).textContent=text;
+ el(id).className="message "+type;
+}
+function safe(value){
+ return String(value ?? "").replace(/[&<>"']/g,c=>({
   "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
  }[c]));
 }
-
-function showLoginMessage(t){
- const b=document.getElementById("loginMessage");
- b.textContent=t;
- b.classList.remove("hidden");
+function showApp(){
+ el("loginScreen").style.display="none";
+ el("app").style.display="block";
 }
-
+function showLogin(){
+ el("app").style.display="none";
+ el("loginScreen").style.display="flex";
+}
 async function verifyAdmin(user){
  const {data,error}=await db.from("admin_users")
- .select("user_id,email").eq("user_id",user.id).maybeSingle();
-
- if(error)throw error;
- if(!data)throw new Error("You are not authorized as Admin.");
-
- document.getElementById("adminEmail").textContent=data.email;
- document.getElementById("loginBox").classList.add("hidden");
- document.getElementById("dashboard").classList.remove("hidden");
-
+  .select("user_id").eq("user_id",user.id).maybeSingle();
+ if(error) throw error;
+ if(!data) throw new Error("This account is not an authorized admin.");
+ currentAdmin=user;
+ showApp();
  await refreshAll();
 }
-
-async function login(){
- const email=document.getElementById("email").value.trim();
- const password=document.getElementById("password").value;
-
- if(!email||!password){
-  showLoginMessage("Enter email and password.");
-  return;
- }
-
- const btn=document.getElementById("loginBtn");
- btn.disabled=true;
- btn.textContent="PLEASE WAIT...";
-
- try{
-  const {data,error}=await db.auth.signInWithPassword({email,password});
-  if(error)throw error;
-  await verifyAdmin(data.user);
- }catch(e){
-  await db.auth.signOut();
-  showLoginMessage(e.message);
- }finally{
-  btn.disabled=false;
-  btn.textContent="LOGIN";
- }
-}
-
-async function logout(){
- await db.auth.signOut();
- location.reload();
-}
-
-async function checkSession(){
- const {data}=await db.auth.getSession();
-
- if(data.session){
-  try{
-   await verifyAdmin(data.session.user);
-  }catch(e){
+el("loginForm").addEventListener("submit",async e=>{
+ e.preventDefault();
+ el("loginBtn").disabled=true;
+ msg("loginMessage","Signing in...","muted");
+ const {data,error}=await db.auth.signInWithPassword({
+  email:el("email").value.trim(),
+  password:el("password").value
+ });
+ if(error){
+  msg("loginMessage",error.message,"error");
+ }else{
+  try{await verifyAdmin(data.user)}
+  catch(err){
    await db.auth.signOut();
-   showLoginMessage(e.message);
+   msg("loginMessage",err.message,"error");
   }
  }
+ el("loginBtn").disabled=false;
+});
+el("logoutBtn").onclick=async()=>{
+ await db.auth.signOut();
+ currentAdmin=null;
+ showLogin();
+};
+async function checkSession(){
+ const {data}=await db.auth.getSession();
+ if(data.session){
+  try{await verifyAdmin(data.session.user)}
+  catch(e){await db.auth.signOut();showLogin();msg("loginMessage",e.message,"error")}
+ }else showLogin();
 }
 
-async function countEvents(type){
- const {count,error}=await db.from("site_events")
- .select("*",{count:"exact",head:true})
- .eq("event_type",type);
+document.querySelectorAll(".nav-btn[data-panel]").forEach(btn=>{
+ btn.addEventListener("click",()=>{
+  document.querySelectorAll(".nav-btn[data-panel]").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+  el(btn.dataset.panel).classList.add("active");
+  el("pageTitle").textContent=btn.textContent.trim().replace(/^[^\w]+/,"");
+  el("sidebar").classList.remove("open");
+ });
+});
+el("menuBtn").onclick=()=>el("sidebar").classList.toggle("open");
+el("refreshBtn").onclick=refreshAll;
 
- if(error)throw error;
- return count||0;
+async function refreshAll(){
+ await Promise.allSettled([
+  loadStats(),loadHistory(),loadTools(),loadAnnouncements(),loadSettings()
+ ]);
+ el("lastUpdated").textContent="Updated: "+new Date().toLocaleTimeString();
 }
-
 async function loadStats(){
- try{
-  const [views,ids,rooms,live]=await Promise.all([
-   countEvents("page_view"),
-   countEvents("id_lookup"),
-   countEvents("room_lookup"),
-   db.from("site_events").select("visitor_id")
-    .eq("event_type","heartbeat")
-    .gte("created_at",new Date(Date.now()-300000).toISOString())
-  ]);
-
-  if(live.error)throw live.error;
-
-  const visitors=new Set(
-   (live.data||[]).map(x=>x.visitor_id).filter(Boolean)
-  );
-
-  document.getElementById("liveUsers").textContent=visitors.size;
-  document.getElementById("totalViews").textContent=views;
-  document.getElementById("idSearches").textContent=ids;
-  document.getElementById("roomSearches").textContent=rooms;
-  document.getElementById("statsMessage").textContent="Statistics loaded.";
-
- }catch(e){
-  document.getElementById("statsMessage").textContent="Statistics error: "+e.message;
+ const since=new Date(Date.now()-5*60*1000).toISOString();
+ const [views,ids,rooms,live]=await Promise.all([
+  db.from("site_events").select("*",{count:"exact",head:true}).eq("event_type","page_view"),
+  db.from("site_events").select("*",{count:"exact",head:true}).eq("event_type","id_lookup"),
+  db.from("site_events").select("*",{count:"exact",head:true}).eq("event_type","room_lookup"),
+  db.from("site_events").select("visitor_id").eq("event_type","heartbeat").gte("created_at",since)
+ ]);
+ if(views.error||ids.error||rooms.error||live.error){
+  msg("dashboardMessage","Some statistics could not be loaded. Check table permissions.","error");
+  return;
  }
+ el("totalViews").textContent=views.count||0;
+ el("idSearches").textContent=ids.count||0;
+ el("roomSearches").textContent=rooms.count||0;
+ el("liveUsers").textContent=new Set((live.data||[]).map(x=>x.visitor_id).filter(Boolean)).size;
+ msg("dashboardMessage","Dashboard data loaded successfully.","success");
 }
 
 async function loadHistory(){
- const body=document.getElementById("historyBody");
- body.innerHTML="<tr><td colspan='3'>Loading...</td></tr>";
-
+ const body=el("historyBody");
+ body.innerHTML='<tr><td colspan="4" class="empty">Loading...</td></tr>';
  const {data,error}=await db.from("site_events")
- .select("event_type,lookup_value,created_at")
- .order("created_at",{ascending:false})
- .limit(50);
-
+  .select("event_type,lookup_value,page,created_at")
+  .order("created_at",{ascending:false}).limit(100);
  if(error){
-  body.innerHTML="<tr><td colspan='3'>"+escapeHTML(error.message)+"</td></tr>";
-  return;
+  body.innerHTML='<tr><td colspan="4" class="empty">Could not load history.</td></tr>';
+  msg("historyMessage",error.message,"error");return;
  }
-
- if(!data.length){
-  body.innerHTML="<tr><td colspan='3'>No history yet.</td></tr>";
-  return;
+ msg("historyMessage",(data||[]).length+" records loaded.");
+ if(!data||!data.length){
+  body.innerHTML='<tr><td colspan="4" class="empty">No history found.</td></tr>';return;
  }
-
- body.innerHTML=data.map(x=>`
- <tr>
- <td>${escapeHTML(x.event_type)}</td>
- <td>${escapeHTML(x.lookup_value||"-")}</td>
- <td>${new Date(x.created_at).toLocaleString()}</td>
+ body.innerHTML=data.map(r=>`<tr>
+  <td>${safe(r.event_type)}</td>
+  <td>${safe(r.lookup_value||"-")}</td>
+  <td>${safe(r.page||"-")}</td>
+  <td>${r.created_at?new Date(r.created_at).toLocaleString():"-"}</td>
  </tr>`).join("");
 }
-
 async function clearHistory(){
- const confirmed=confirm(
-  "Are you sure you want to permanently clear all website event history?"
- );
-
- if(!confirmed)return;
-
- try{
-  const {error}=await db.from("site_events")
-  .delete()
-  .gte("created_at","1970-01-01T00:00:00.000Z");
-
-  if(error)throw error;
-
-  await Promise.all([loadHistory(),loadStats()]);
-  alert("History cleared successfully.");
-
- }catch(e){
-  alert("Unable to clear history: "+e.message);
- }
-}
-
-/* TOOLS MANAGER */
-
-function showToolMessage(message){
- const box=document.getElementById("toolMessage");
- box.textContent=message;
- box.classList.remove("hidden");
+ if(!confirm("Are you sure you want to permanently delete all search and visit history?"))return;
+ msg("historyMessage","Deleting...","muted");
+ const {error}=await db.from("site_events").delete().gte("created_at","1970-01-01T00:00:00.000Z");
+ if(error){msg("historyMessage",error.message,"error");return}
+ msg("historyMessage","History cleared successfully.");
+ await loadHistory();await loadStats();
 }
 
 function updateToolUrlField(){
- const type=document.getElementById("toolType").value;
- const url=document.getElementById("toolUrl");
- const hint=document.getElementById("toolUrlHint");
- const isLink=type==="link";
+ const isLink=el("toolType").value==="link";
+ el("toolUrlWrap").classList.toggle("hidden",!isLink);
+ el("toolUrl").required=isLink;
+ if(!isLink)el("toolUrl").value="";
+}
+function resetToolForm(){
+ el("toolId").value="";
+ el("toolName").value="";
+ el("toolSlug").value="";
+ el("toolIcon").value="🛠️";
+ el("toolType").value="builtin";
+ el("toolUrl").value="";
+ el("toolDescription").value="";
+ el("toolOrder").value="0";
+ el("toolFormTitle").textContent="Add New Tool";
+ updateToolUrlField();
+}
+async function saveTool(){
+ const id=el("toolId").value;
+ const name=el("toolName").value.trim();
+ const slug=el("toolSlug").value.trim().toLowerCase().replace(/\s+/g,"-");
+ const type=el("toolType").value;
+ const url=el("toolUrl").value.trim();
+ if(!name||!slug){msg("toolMessage","Enter Tool Name and Slug.","error");return}
+ if(type==="link"){
+  try{const u=new URL(url);if(!["http:","https:"].includes(u.protocol))throw new Error()}
+  catch(e){msg("toolMessage","Enter a valid HTTP or HTTPS Tool URL.","error");return}
+ }
+ const payload={
+  name,slug,icon:el("toolIcon").value.trim()||"🛠️",
+  description:el("toolDescription").value.trim(),
+  tool_type:type,tool_url:type==="link"?url:"",
+  sort_order:Number(el("toolOrder").value)||0
+ };
+ let result;
+ if(id)result=await db.from("site_tools").update(payload).eq("id",id);
+ else result=await db.from("site_tools").insert(payload);
+ if(result.error){msg("toolMessage",result.error.message,"error");return}
+ msg("toolMessage",id?"Tool updated successfully.":"Tool added successfully.");
+ resetToolForm();await loadTools();
+}
+async function loadTools(){
+ const body=el("toolsBody");
+ body.innerHTML='<tr><td colspan="5" class="empty">Loading...</td></tr>';
+ const {data,error}=await db.from("site_tools").select("*").order("sort_order");
+ if(error){body.innerHTML='<tr><td colspan="5" class="empty">Could not load tools.</td></tr>';msg("toolMessage",error.message,"error");return}
+ if(!data||!data.length){body.innerHTML='<tr><td colspan="5" class="empty">No tools added yet.</td></tr>';return}
+ body.innerHTML=data.map(t=>`<tr>
+  <td>${safe(t.icon)} ${safe(t.name)}<br><span class="muted">${safe(t.slug)}</span></td>
+  <td>${safe(t.tool_type)}</td>
+  <td>${Number(t.sort_order)||0}</td>
+  <td><span class="status ${t.is_active?"":"off"}">${t.is_active?"Active":"Inactive"}</span></td>
+  <td><div class="actions">
+   <button class="secondary" onclick="editTool('${t.id}')">Edit</button>
+   <button class="secondary" onclick="toggleTool('${t.id}',${!t.is_active})">${t.is_active?"Disable":"Enable"}</button>
+   <button class="danger" onclick="deleteTool('${t.id}')">Delete</button>
+  </div></td>
+ </tr>`).join("");
+}
+async function editTool(id){
+ const {data,error}=await db.from("site_tools").select("*").eq("id",id).single();
+ if(error){msg("toolMessage",error.message,"error");return}
+ el("toolId").value=data.id;
+ el("toolName").value=data.name||"";
+ el("toolSlug").value=data.slug||"";
+ el("toolIcon").value=data.icon||"🛠️";
+ el("toolType").value=data.tool_type||"builtin";
+ el("toolUrl").value=data.tool_url||"";
+ el("toolDescription").value=data.description||"";
+ el("toolOrder").value=data.sort_order||0;
+ el("toolFormTitle").textContent="Edit Tool";
+ updateToolUrlField();
+ window.scrollTo({top:0,behavior:"smooth"});
+}
+async function toggleTool(id,active){
+ const {error}=await db.from("site_tools").update({is_active:active}).eq("id",id);
+ if(error){msg("toolMessage",error.message,"error");return}
+ await loadTools();
+}
+async function deleteTool(id){
+ if(!confirm("Delete this tool permanently?"))return;
+ const {error}=await db.from("site_tools").delete().eq("id",id);
+ if(error){msg("toolMessage",error.message,"error");return}
+ msg("toolMessage","Tool deleted.");
+ await loadTools();
+}
 
- url.disabled=!isLink;
- url.required=isLink;
-
- url.placeholder=isLink
+async function addAnnouncement(){
+ const message=el("announcementText").value.trim();
+ if(!message){msg("announcementMessage","Enter an announcement first.","error");return}
+ const {error}=await db.from("site_announcements").insert({
+  message,is_active:true,updated_at:new Date().toISOString()
+ });
+ if(error){msg("announcementMessage",error.message,"error");return}
+ el("announcementText").value="";
+ msg("announcementMessage","Announcement published successfully.");
+ await loadAnnouncements();
+}
+async function loadAnnouncements(){
+ const box=el("announcementList");
+ const {data,error}=await db.from("site_announcements").select("*").order("updated_at",{ascending:false});
+ iaceholder=isLink
   ?"https://example.com/tool"
   :"Not required for built-in tools";
 
